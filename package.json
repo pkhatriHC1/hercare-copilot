@@ -8,6 +8,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@hc1/design-system": "github:pkhatriHC1/hc1-design-system",
     "@tailwindcss/vite": "^4.3.3",
     "lucide-react": "^0.468.0",
     "react": "^18.3.1",
