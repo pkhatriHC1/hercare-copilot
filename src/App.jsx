@@ -10,7 +10,7 @@ const GlobalReset = () => {
   return null;
 };
 import { Search, Filter, ChevronDown, ArrowRight, ChevronLeft, MessageSquare, ClipboardList, User, Hash, Stethoscope } from "lucide-react";
-import { Button } from "@hc1/design-system";
+import { Button } from "./components/Button";
 
 // ── Design tokens (identical to BloodHealth) ──────────────────────
 const C = {
