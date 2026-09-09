@@ -157,7 +157,7 @@ const calcACOG = (p) => {
 const PATIENTS = [
   // CRITICAL — HGB < 8, many ACOG conditions
   { id:"MR-7821", name:"Maria Rodriguez", age:34, dob:"03/15/1992", sex:"Female", weight:"68 kg", bmi:"24.2", npi:"1122334455", domain:"OB Anemia", caseType:"OB Surgical",
-    gestAge:"32 wks", parity:"G4P2", redoOrNonIsolated:false, significantComorbidities:true, anticoagulants:false,
+    gestAge:"32 wks", edd:"06/01/2026", parity:"G4P2", redoOrNonIsolated:false, significantComorbidities:true, anticoagulants:false,
     labs:[{label:"HGB",value:"7.2",unit:"g/dL",status:"critical",draws:[{date:"Apr 5",value:9.6},{date:"Apr 7",value:8.4},{date:"Apr 9",value:7.2}]},{label:"Ferritin",value:"6",unit:"ng/mL",status:"critical"},{label:"TIBC",value:"480",unit:"mcg/dL",status:"high"},{label:"Transferrin Sat",value:"4",unit:"%",status:"critical"},{label:"Reticulocytes",value:"0.9",unit:"%",status:"low"},{label:"WBC",value:"10.2",unit:"K/uL",status:"high"},{label:"Platelets",value:"168",unit:"K/uL",status:"low"},{label:"Creatinine",value:"0.8",unit:"mg/dL",status:"low"}],
     comorbidities:["Multiple Gestations","History Preterm Labor","Hypertension","Anemia","Cardiac Disease","Diabetes"],
     conditions:["Multiple Gestations","Hypertension","Iron Deficiency Anemia","Gestational Diabetes"],
@@ -172,7 +172,7 @@ const PATIENTS = [
 
   // CRITICAL — HGB < 8, different condition mix
   { id:"SM-9643", name:"Sarah Martinez", age:31, dob:"07/22/1994", sex:"Female", weight:"72 kg", bmi:"25.8", npi:"1122334456", domain:"OB Anemia", caseType:"OB Non-Surgical",
-    gestAge:"30 wks", parity:"G2P1", redoOrNonIsolated:true, significantComorbidities:true, anticoagulants:false,
+    gestAge:"30 wks", edd:"06/16/2026", parity:"G2P1", redoOrNonIsolated:true, significantComorbidities:true, anticoagulants:false,
     labs:[{label:"HGB",value:"7.8",unit:"g/dL",status:"critical",draws:[{date:"Apr 8",value:9.1},{date:"Apr 9",value:7.8}]},{label:"Ferritin",value:"9",unit:"ng/mL",status:"critical"},{label:"TIBC",value:"398",unit:"mcg/dL",status:"high"},{label:"Transferrin Sat",value:"6",unit:"%",status:"critical"},{label:"Reticulocytes",value:"0.9",unit:"%",status:"low"},{label:"WBC",value:"8.3",unit:"K/uL",status:"low"},{label:"Platelets",value:"210",unit:"K/uL",status:"low"},{label:"Creatinine",value:"0.7",unit:"mg/dL",status:"low"}],
     comorbidities:["Multiple Gestations","History Preterm Labor","Anemia","Prior Cesarean","Placenta Previa"],
     conditions:["Multiple Gestations","Preterm Labor Risk","Placenta Previa","Severe Iron Deficiency"],
@@ -187,7 +187,7 @@ const PATIENTS = [
 
   // HIGH — HGB 8–11, moderate ACOG conditions
   { id:"PS-0081", name:"Priya Sharma", age:29, dob:"11/08/1996", sex:"Female", weight:"63 kg", bmi:"22.4", npi:"1122334457", domain:"OB Anemia", caseType:"OB Non-Surgical",
-    gestAge:"28 wks", parity:"G1P0", redoOrNonIsolated:false, significantComorbidities:false, anticoagulants:false,
+    gestAge:"28 wks", edd:"07/01/2026", parity:"G1P0", redoOrNonIsolated:false, significantComorbidities:false, anticoagulants:false,
     labs:[{label:"HGB",value:"9.2",unit:"g/dL",status:"high",draws:[{date:"Apr 6",value:10.4},{date:"Apr 9",value:9.2}]},{label:"Ferritin",value:"11",unit:"ng/mL",status:"high"},{label:"TIBC",value:"380",unit:"mcg/dL",status:"high"},{label:"Transferrin Sat",value:"12",unit:"%",status:"high"},{label:"Reticulocytes",value:"1.4",unit:"%",status:"low"},{label:"WBC",value:"8.8",unit:"K/uL",status:"low"},{label:"Platelets",value:"228",unit:"K/uL",status:"low"},{label:"Creatinine",value:"0.6",unit:"mg/dL",status:"low"}],
     comorbidities:["Anemia","Thyroid Disease","Advanced Maternal Age"],
     conditions:["Gestational Iron Deficiency Anemia","Hypothyroidism"],
@@ -202,7 +202,7 @@ const PATIENTS = [
 
   // HIGH — HGB 8–11, obesity + hypertension mix
   { id:"JW-3431", name:"Jennifer Washington", age:38, dob:"02/14/1988", sex:"Female", weight:"98 kg", bmi:"34.2", npi:"1122334458", domain:"OB Anemia", caseType:"OB Surgical",
-    gestAge:"24 wks", parity:"G5P2", redoOrNonIsolated:false, significantComorbidities:true, anticoagulants:false,
+    gestAge:"24 wks", edd:"07/27/2026", parity:"G5P2", redoOrNonIsolated:false, significantComorbidities:true, anticoagulants:false,
     labs:[{label:"HGB",value:"10.1",unit:"g/dL",status:"high",draws:[{date:"Apr 5",value:10.8},{date:"Apr 9",value:10.1}]},{label:"Ferritin",value:"22",unit:"ng/mL",status:"high"},{label:"TIBC",value:"342",unit:"mcg/dL",status:"high"},{label:"Transferrin Sat",value:"18",unit:"%",status:"high"},{label:"Reticulocytes",value:"1.6",unit:"%",status:"low"},{label:"WBC",value:"7.9",unit:"K/uL",status:"low"},{label:"Platelets",value:"244",unit:"K/uL",status:"low"},{label:"Creatinine",value:"0.9",unit:"mg/dL",status:"low"}],
     comorbidities:["Hypertension","Anemia","Obesity","Advanced Maternal Age","Recent Pregnancy"],
     conditions:["Hypertension","Anemia of Pregnancy","Obesity","Multiparity"],
@@ -217,7 +217,7 @@ const PATIENTS = [
 
   // LOW — HGB ≥ 11, minimal conditions
   { id:"AT-9012", name:"Ashley Thompson", age:26, dob:"09/05/2000", sex:"Female", weight:"61 kg", bmi:"22.0", npi:"1122334459", domain:"OB Anemia", caseType:"Postpartum",
-    gestAge:"20 wks", parity:"G1P0", redoOrNonIsolated:false, significantComorbidities:false, anticoagulants:false,
+    gestAge:"20 wks", edd:"08/27/2026", parity:"G1P0", redoOrNonIsolated:false, significantComorbidities:false, anticoagulants:false,
     labs:[{label:"HGB",value:"11.4",unit:"g/dL",status:"low",draws:[{date:"Apr 7",value:11.8},{date:"Apr 9",value:11.4}]},{label:"Ferritin",value:"28",unit:"ng/mL",status:"low"},{label:"TIBC",value:"295",unit:"mcg/dL",status:"low"},{label:"Transferrin Sat",value:"22",unit:"%",status:"low"},{label:"Reticulocytes",value:"1.8",unit:"%",status:"low"},{label:"WBC",value:"8.2",unit:"K/uL",status:"low"},{label:"Platelets",value:"282",unit:"K/uL",status:"low"},{label:"Creatinine",value:"0.7",unit:"mg/dL",status:"low"}],
     comorbidities:["Anemia"],
     conditions:["Mild Gestational Anemia","Mental Health Support"],
@@ -232,7 +232,7 @@ const PATIENTS = [
 
   // LOW — HGB ≥ 11, cardiac + thyroid
   { id:"LK-5509", name:"Linda Kowalski", age:41, dob:"06/18/1984", sex:"Female", weight:"74 kg", bmi:"26.1", npi:"1122334460", domain:"OB Anemia", caseType:"OB Non-Surgical",
-    gestAge:"18 wks", parity:"G3P1", redoOrNonIsolated:false, significantComorbidities:true, anticoagulants:true,
+    gestAge:"18 wks", edd:"09/09/2026", parity:"G3P1", redoOrNonIsolated:false, significantComorbidities:true, anticoagulants:true,
     labs:[{label:"HGB",value:"11.8",unit:"g/dL",status:"low",draws:[{date:"Apr 4",value:12.1},{date:"Apr 9",value:11.8}]},{label:"Ferritin",value:"32",unit:"ng/mL",status:"low"},{label:"TIBC",value:"280",unit:"mcg/dL",status:"low"},{label:"Transferrin Sat",value:"24",unit:"%",status:"low"},{label:"Reticulocytes",value:"2.1",unit:"%",status:"low"},{label:"WBC",value:"7.4",unit:"K/uL",status:"low"},{label:"Platelets",value:"201",unit:"K/uL",status:"low"},{label:"Creatinine",value:"0.8",unit:"mg/dL",status:"low"}],
     comorbidities:["Cardiac Disease","Thyroid Disease","Advanced Maternal Age","Prior Cesarean"],
     conditions:["Cardiac Disease","Hypothyroidism","Advanced Maternal Age"],
@@ -490,8 +490,8 @@ const OverviewZone = ({p, onNavigate}) => {
           <span style={{fontSize:14}}>⚠️</span>
           <span style={{fontSize:14,fontWeight:700,color:C.grey[800],fontFamily:font}}>Risk Assessment</span>
         </div>
-        {/* Five value columns: HGB · Ferritin · ACOG · TRS · Active Order */}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr 1.4fr",borderBottom:`1px solid ${C.grey[200]}`}}>
+        {/* Six value columns: HGB · Ferritin · ACOG · TRS · EDD · Active Order */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr 1fr 1.4fr",borderBottom:`1px solid ${C.grey[200]}`}}>
           <div style={{padding:"14px 18px",borderRight:`1px solid ${C.grey[200]}`}}>
             <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",color:C.grey[500],fontFamily:font,marginBottom:6}}>HGB</div>
             <div style={{display:"flex",alignItems:"baseline",gap:3,marginBottom:4}}>
@@ -522,9 +522,15 @@ const OverviewZone = ({p, onNavigate}) => {
             <TRSGauge value={trs.score} color={tc} size={64}/>
             <div style={{marginTop:4}}><SevChip tier={trsTier(trs.trsSev)}/></div>
           </div>
+          <div style={{padding:"14px 18px",borderRight:`1px solid ${C.grey[200]}`}}>
+            <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",color:C.grey[500],fontFamily:font,marginBottom:6}}>EDD</div>
+            <div style={{fontSize:18,fontWeight:600,color:C.grey[800],fontFamily:font,lineHeight:1.3}}>{p.edd}</div>
+          </div>
           <div style={{padding:"14px 18px"}}>
             <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",color:C.grey[500],fontFamily:font,marginBottom:6}}>Active Order</div>
-            <div style={{fontSize:14,fontWeight:600,color:C.grey[800],fontFamily:font,lineHeight:1.5}}>{p.order}</div>
+            {p.carePlanStatus==="pending"
+              ? <div style={{display:"flex",alignItems:"center",gap:4}}><div style={{width:5,height:5,borderRadius:"50%",background:C.error[400],flexShrink:0}}/><span style={{fontSize:12,color:C.error[400],fontFamily:font,fontWeight:600}}>CR Not Started</span></div>
+              : <div style={{fontSize:14,fontWeight:600,color:C.grey[800],fontFamily:font,lineHeight:1.5}}>{p.order}</div>}
           </div>
         </div>
       </div>
@@ -568,7 +574,7 @@ const OverviewZone = ({p, onNavigate}) => {
           {/* CTA */}
           <div style={{display:"flex",justifyContent:"flex-end"}}>
             <button onClick={()=>onNavigate("cp")} style={{background:C.primary[600],color:"#fff",border:"none",borderRadius:8,padding:"9px 18px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:font,display:"flex",alignItems:"center",gap:6}}>
-              Review & Deploy Medication <ArrowRight size={13}/>
+              Review Optimization Recommendations <ArrowRight size={13}/>
             </button>
           </div>
         </div>
@@ -875,7 +881,7 @@ const CarePlanZone = ({p}) => {
   const [clinicalNotes, setClinicalNotes] = useState("");
   const [paChecked, setPaChecked]   = useState(false);
 
-  const steps = ["Diagnose","Care Plan"];
+  const steps = ["Diagnose","Care Recommendations"];
   const s = p.severity;
 
   const criteriaResults = [
@@ -902,7 +908,7 @@ const CarePlanZone = ({p}) => {
       {approved && (
         <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:"#fff",padding:"40px 20px",textAlign:"center"}}>
           <div style={{width:80,height:80,borderRadius:"50%",background:C.success[100],border:`2px solid ${C.success[400]}`,display:"flex",alignItems:"center",justifyContent:"center",marginBottom:32}}><CheckCircle size={38} color={C.success[400]}/></div>
-          <div style={{fontSize:32,fontWeight:700,color:C.grey[800],fontFamily:font,marginBottom:14}}>Care Plan Approved Successfully</div>
+          <div style={{fontSize:32,fontWeight:700,color:C.grey[800],fontFamily:font,marginBottom:14}}>Care Recommendations Approved Successfully</div>
           <div style={{fontSize:16,color:C.grey[500],fontFamily:font,maxWidth:480,lineHeight:1.6}}>IV Iron order transmitted to pharmacy. Care team notified via Epic InBasket.</div>
         </div>
       )}
@@ -978,12 +984,12 @@ const CarePlanZone = ({p}) => {
             <textarea value={clinicalNotes} onChange={e=>setClinicalNotes(e.target.value)} placeholder="Add any modifications or clinical reasoning..." rows={3} style={{width:"100%",boxSizing:"border-box",border:`1px solid ${C.grey[300]}`,borderRadius:8,padding:"9px 12px",fontSize:14,fontFamily:font,color:C.grey[800],resize:"vertical",outline:"none"}}/>
           </div>
 
-          <StepActions onNext={()=>setStep(1)} nextLabel="Attest & Generate Care Plan →"/>
+          <StepActions onNext={()=>setStep(1)} nextLabel="Attest →"/>
         </div>}
 
         {/* ══ STEP 1: CARE PLAN ══ */}
         {step===1 && <div>
-          <StepHeader eyebrow="Evidence-Based Care Plan" title="ACOG Evidence-Based Care Plan"/>
+          <StepHeader eyebrow="Evidence-Based Care Recommendations" title="ACOG Evidence-Based Care Recommendations"/>
 
           {/* Treatment Goals — grey-200 box, same as BloodHealth */}
           <div style={{background:C.grey[200],borderRadius:8,padding:"10px 14px",marginBottom:20}}>
@@ -1168,8 +1174,6 @@ const PatientHeader = ({p, onOpenIQ}) => {
           <span style={{fontSize:12,color:C.grey[400],margin:"0 2px"}}>·</span>
           <User size={11} color={C.grey[500]}/><span style={{fontSize:12,color:C.grey[700],fontFamily:font}}>Age {p.age} · {p.sex}</span>
           <span style={{fontSize:12,color:C.grey[400],margin:"0 2px"}}>·</span>
-          <span style={{fontSize:12,color:C.grey[500],fontFamily:font}}>NPI</span><span style={{fontSize:12,color:C.grey[700],fontFamily:font,marginLeft:3}}>{p.npi}</span>
-          <span style={{fontSize:12,color:C.grey[400],margin:"0 2px"}}>·</span>
           <span style={{fontSize:12,color:C.grey[500],fontFamily:font}}>Obstetric History</span><span style={{fontSize:12,fontWeight:600,color:C.grey[700],fontFamily:font,marginLeft:3}}>{p.parity}</span>
         </div>
       </div>
@@ -1189,7 +1193,7 @@ const PatientHeader = ({p, onOpenIQ}) => {
 // ── Zone Tabs (AI Summary tab removed — chat is now global) ──────
 const ZoneTabs = ({active,onChange}) => (
   <div style={{background:C.grey[100],borderBottom:`1px solid ${C.grey[300]}`,display:"flex",padding:"0 20px",flexShrink:0}}>
-    {[{id:"overview",label:"Clinical Decision Support",Icon:User},{id:"cp",label:"Care Plan",Icon:ClipboardList}].map(({id,label,Icon}) => {
+    {[{id:"overview",label:"Clinical Decision Support",Icon:User},{id:"cp",label:"Optimization Recommendations",Icon:ClipboardList}].map(({id,label,Icon}) => {
       const a = active===id;
       return <div key={id} onClick={()=>onChange(id)} style={{display:"flex",alignItems:"center",gap:6,padding:"10px 16px 9px",borderBottom:a?`2px solid ${C.primary[500]}`:"2px solid transparent",cursor:"pointer",fontSize:14,fontWeight:a?600:400,color:a?C.grey[800]:C.grey[500],fontFamily:font,marginBottom:-1,transition:"all 0.12s",whiteSpace:"nowrap"}}><Icon size={14} strokeWidth={1.5} color={a?C.primary[500]:C.grey[500]}/>{label}</div>;
     })}
@@ -1208,7 +1212,7 @@ const MiniWorklist = ({patients,activeId,onSelect,onBack}) => (
     <div style={{flex:1,overflowY:"auto",minHeight:0}}>
       {patients.map(p => {
         const a = p.id===activeId;
-        const cpC = p.carePlanStatus==="generated"?C.success[400]:p.carePlanStatus==="in-progress"?C.orange[400]:C.grey[400];
+        const cpC = p.carePlanStatus==="generated"?C.success[400]:p.carePlanStatus==="in-progress"?C.orange[400]:p.carePlanStatus==="pending"?C.error[400]:C.grey[400];
         return (
           <div key={p.id} onClick={()=>onSelect(p)} style={{padding:"12px 16px",borderBottom:`1px solid ${C.grey[300]}`,borderLeft:`3px solid ${a?C.primary[500]:"transparent"}`,background:a?C.primary[100]:"transparent",cursor:"pointer",transition:"background 0.12s"}}
             onMouseEnter={e=>{if(!a)e.currentTarget.style.background=C.grey[200];}}
@@ -1220,7 +1224,7 @@ const MiniWorklist = ({patients,activeId,onSelect,onBack}) => (
               <span style={{fontSize:10,fontWeight:600,color:C.grey[700],background:C.grey[200],border:`1px solid ${C.grey[300]}`,borderRadius:4,padding:"1px 6px",fontFamily:font}}>{p.gestAge.replace(" wks","W")}</span>
               <span style={{fontSize:10,fontWeight:600,color:C.grey[700],background:C.grey[200],border:`1px solid ${C.grey[300]}`,borderRadius:4,padding:"1px 6px",fontFamily:font}}>{p.caseType}</span>
             </div>
-            {p.carePlanStatus!=="pending" && <div style={{display:"flex",alignItems:"center",gap:4}}><div style={{width:5,height:5,borderRadius:"50%",background:cpC,flexShrink:0}}/><span style={{fontSize:10,color:cpC,fontFamily:font,fontWeight:600}}>{p.carePlanStatus==="generated"?"CP Generated":"CP In Progress"}</span></div>}
+            <div style={{display:"flex",alignItems:"center",gap:4}}><div style={{width:5,height:5,borderRadius:"50%",background:cpC,flexShrink:0}}/><span style={{fontSize:10,color:cpC,fontFamily:font,fontWeight:600}}>{p.carePlanStatus==="generated"?"CR Generated":p.carePlanStatus==="in-progress"?"CR In Progress":"CR Not Started"}</span></div>
           </div>
         );
       })}
@@ -1252,7 +1256,7 @@ const PatientWorkspace = ({patient,allPatients,onBack,onSelectPatient,defaultZon
         <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:6}}><div style={{width:6,height:6,borderRadius:"50%",background:C.success[400],boxShadow:`0 0 6px ${C.success[400]}`}}/><span style={{fontSize:12,color:C.success[400],fontFamily:font}}>FHIR R4 Live</span></div>
       </div>
       <div style={{display:"flex",flex:1,overflow:"hidden"}}>
-        <MiniWorklist patients={allPatients} activeId={patient.id} onSelect={p=>{onSelectPatient(p);setZone("overview");setIqOpen(false);}} onBack={onBack}/>
+        <MiniWorklist patients={allPatients.filter(p=>p.id===patient.id)} activeId={patient.id} onSelect={p=>{onSelectPatient(p);setZone("overview");setIqOpen(false);}} onBack={onBack}/>
         <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",minWidth:0}}>
           <PatientHeader p={patient} onOpenIQ={()=>setIqOpen(o=>!o)}/>
           <ZoneTabs active={zone} onChange={setZone}/>
@@ -1287,6 +1291,11 @@ const PatientRow = ({p, onOpen, onOpenACOG}) => {
             <span style={{fontSize:10,fontWeight:600,color:C.grey[700],background:C.grey[200],border:`1px solid ${C.grey[300]}`,borderRadius:4,padding:"2px 6px",fontFamily:font}}>{p.gestAge.replace(" wks","W")}</span>
             <span style={{fontSize:10,fontWeight:600,color:C.grey[700],background:C.grey[200],border:`1px solid ${C.grey[300]}`,borderRadius:4,padding:"2px 6px",fontFamily:font}}>{p.caseType}</span>
           </div>
+        </td>
+
+        {/* EDD */}
+        <td style={{padding:"12px 16px",minWidth:110}}>
+          <span style={{fontSize:14,fontWeight:600,color:C.grey[800],fontFamily:font}}>{p.edd}</span>
         </td>
 
         {/* LAB VALUES */}
@@ -1327,7 +1336,10 @@ const PatientRow = ({p, onOpen, onOpenACOG}) => {
         </td>
 
         {/* ACTIVE ORDER */}
-        <td style={{padding:"12px 16px",minWidth:180}}><span style={{fontSize:12,color:C.grey[700],fontFamily:font,lineHeight:1.4}}>{p.order}</span></td>
+        <td style={{padding:"12px 16px",minWidth:180}}>
+          {(() => {const cpC=p.carePlanStatus==="generated"?C.success[400]:p.carePlanStatus==="in-progress"?C.orange[400]:p.carePlanStatus==="pending"?C.error[400]:C.grey[400];const cpL=p.carePlanStatus==="generated"?"CR Generated":p.carePlanStatus==="in-progress"?"CR In Progress":p.carePlanStatus==="pending"?"CR Not Started":"";return cpL? <div style={{display:"flex",alignItems:"center",gap:4,marginBottom:4}}><div style={{width:5,height:5,borderRadius:"50%",background:cpC,flexShrink:0}}/><span style={{fontSize:10,color:cpC,fontFamily:font,fontWeight:600}}>{cpL}</span></div>:null;})()}
+          {p.carePlanStatus!=="pending" && <span style={{fontSize:12,color:C.grey[700],fontFamily:font,lineHeight:1.4}}>{p.order}</span>}
+        </td>
 
         {/* PROVIDER */}
         <td style={{padding:"12px 16px",minWidth:120}}>
@@ -1343,7 +1355,7 @@ const PatientRow = ({p, onOpen, onOpenACOG}) => {
 
         {/* ACTIONS */}
         <td style={{padding:"12px 16px",minWidth:150}} onClick={e=>e.stopPropagation()}>
-          <button onClick={()=>onOpen(p,"cp")} style={{background:C.primary[600],color:"#fff",border:"none",borderRadius:6,padding:"6px 12px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:font,display:"flex",alignItems:"center",gap:4,whiteSpace:"nowrap"}}>Generate Care Plan <ArrowRight size={11}/></button>
+          <button onClick={()=>onOpen(p,"cp")} style={{background:C.orange[400],color:"#fff",border:"none",borderRadius:6,padding:"6px 12px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:font,display:"flex",alignItems:"center",gap:4,whiteSpace:"nowrap"}}>Review Optimization Recommendations <ArrowRight size={11}/></button>
         </td>
       </tr>
       {trsOpen && <TRSDrawer p={p} onClose={()=>setTrsOpen(false)}/>}
@@ -1368,7 +1380,7 @@ export default function App() {
       </div></>
     );
 
-  const COLS = ["PATIENT / GA","LAB VALUES","TRS","ACOG RISK","ACTIVE ORDER","PROVIDER","ANEMIA SEVERITY","ACTIONS"];
+  const COLS = ["PATIENT / GA","EDD","LAB VALUES","TRS","ACOG RISK","ACTIVE ORDER","PROVIDER","ANEMIA SEVERITY","ACTIONS"];
   const filtered = PATIENTS.filter(p => {
     const ag = getAnemiaGrade(p.labs[0].value);
     return (!search || p.name.toLowerCase().includes(search.toLowerCase()) || p.id.toLowerCase().includes(search.toLowerCase()) || p.provider.toLowerCase().includes(search.toLowerCase()))
