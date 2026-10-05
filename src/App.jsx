@@ -9,7 +9,7 @@ const GlobalReset = () => {
   }, []);
   return null;
 };
-import { Search, Filter, ChevronDown, ArrowRight, ChevronLeft, MessageSquare, ClipboardList, User, Hash, Stethoscope } from "lucide-react";
+import { Search, Filter, ChevronDown, ArrowRight, ChevronLeft, MessageSquare, ClipboardList, User, Hash, Stethoscope, RotateCcw } from "lucide-react";
 import { Button } from "./components/Button";
 
 // ── Design tokens (identical to BloodHealth) ──────────────────────
@@ -25,33 +25,11 @@ const C = {
   hc:        { 100:"#FDF0F7", 400:"#C2185B", 500:"#880E4F" },
 };
 const font = "'Source Sans Pro',system-ui,sans-serif";
-const TRC  = { "very-high": C.error[400], "high": C.orange[400], "medium": "#92600A", "low": C.success[400] };
-// Shared 4-tier severity chip — SEVERE / MODERATE / MILD / NORMAL — consistent across TRS, ACOG, and lab grades
+// Shared 4-tier severity chip — SEVERE / MODERATE / MILD / NORMAL — consistent across MHR and lab grades
 const SEV4={severe:{c:C.error[400],bg:C.error[100],l:"SEVERE"},moderate:{c:C.orange[400],bg:C.orange[100],l:"MODERATE"},mild:{c:"#92600A",bg:C.yellow[100],l:"MILD"},normal:{c:C.success[400],bg:C.success[100],l:"NORMAL"}};
 const SevChip=({tier})=>{const s=SEV4[tier]||SEV4.normal;return <span style={{fontSize:12,fontWeight:700,color:s.c,background:s.bg,borderRadius:4,padding:"2px 7px",fontFamily:font,letterSpacing:"0.06em",textTransform:"uppercase"}}>{s.l}</span>;};
-// Map TRS trsSev → 4-tier: very-high → severe, high → moderate, medium → mild, low → normal
-const trsTier=(sev)=>sev==="very-high"?"severe":sev==="high"?"moderate":sev==="medium"?"mild":"normal";
-// Map ACOG cat → 4-tier: Critical → severe, High → moderate, Moderate → mild, Low → normal
-const acogTier=(cat)=>cat==="Critical"?"severe":cat==="High"?"moderate":cat==="Moderate"?"mild":"normal";
-// Consistent SVG icons for each ACOG condition — same size, same stroke style
-const ConditionIcon = ({name, size=16}) => {
-  const s = {width:size, height:size, flexShrink:0};
-  const sh = {fill:"none", strokeWidth:"1.8", strokeLinecap:"round", strokeLinejoin:"round"};
-  if(name==="Multiple Gestations")   return <svg {...s} viewBox="0 0 24 24" {...sh} stroke={C.orange[400]}><circle cx="9" cy="7" r="3"/><circle cx="15" cy="7" r="3"/><path d="M3 21v-2a4 4 0 0 1 4-4h4"/><path d="M13 21v-2a4 4 0 0 1 4-4h4"/></svg>;
-  if(name==="History Preterm Labor") return <svg {...s} viewBox="0 0 24 24" {...sh} stroke={C.yellow[400]}><path d="M12 2a7 7 0 0 1 7 7c0 4.5-7 13-7 13S5 13.5 5 9a7 7 0 0 1 7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>;
-  if(name==="Hypertension")          return <svg {...s} viewBox="0 0 24 24" {...sh} stroke={C.error[400]}><path d="M3 12h2l2-6 3 12 3-9 2 3h2"/><path d="M19 12h2"/></svg>;
-  if(name==="Anemia")                return <svg {...s} viewBox="0 0 24 24" {...sh} stroke={C.error[400]}><path d="M12 2C12 2 5 10.5 5 15a7 7 0 0 0 14 0c0-4.5-7-13-7-13z"/></svg>;
-  if(name==="Recent Pregnancy")      return <svg {...s} viewBox="0 0 24 24" {...sh} stroke={C.success[400]}><circle cx="12" cy="4" r="2"/><path d="M9 8h3l1 4c1.5 0 3 1.5 3 3.5S14.5 19 13 19H9"/><path d="M9 8l-1 5"/><path d="M8 13l-1 6"/></svg>;
-  if(name==="Diabetes")              return <svg {...s} viewBox="0 0 24 24" {...sh} stroke={C.orange[400]}><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18"/></svg>;
-  if(name==="Obesity")               return <svg {...s} viewBox="0 0 24 24" {...sh} stroke={C.yellow[400]}><circle cx="12" cy="12" r="8"/><path d="M8 12c0-2 1.5-4 4-4s4 2 4 4"/><path d="M8 14h8"/></svg>;
-  if(name==="Prior Cesarean")        return <svg {...s} viewBox="0 0 24 24" {...sh} stroke={C.primary[500]}><path d="M9 3v18"/><path d="M15 3v18"/><path d="M3 9h18"/><path d="M3 15h18"/></svg>;
-  if(name==="Placenta Previa")       return <svg {...s} viewBox="0 0 24 24" {...sh} stroke={C.error[400]}><path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/><circle cx="12" cy="10" r="3"/></svg>;
-  if(name==="Advanced Maternal Age") return <svg {...s} viewBox="0 0 24 24" {...sh} stroke={C.orange[400]}><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0 1 12 0v2"/><path d="M12 14v3"/><path d="M9.5 19.5l2.5-2.5 2.5 2.5"/></svg>;
-  if(name==="Thyroid Disease")       return <svg {...s} viewBox="0 0 24 24" {...sh} stroke={C.secondary[500]}><ellipse cx="12" cy="12" rx="5" ry="7"/><path d="M7 12H3"/><path d="M21 12h-4"/></svg>;
-  if(name==="Cardiac Disease")       return <svg {...s} viewBox="0 0 24 24" {...sh} stroke={C.error[400]}><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>;
-  // fallback — ⚠ exclamation for unknown conditions
-  return <svg {...s} viewBox="0 0 24 24" {...sh} stroke={C.grey[500]}><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="13"/><circle cx="12" cy="16.5" r="0.6" fill={C.grey[500]} stroke="none"/></svg>;
-};
+// Map MHR tier → 4-tier SevChip: Very High → severe, High → moderate, Intermediate → mild, Low → normal
+const mhrTier=(cat)=>cat==="Very High"?"severe":cat==="High"?"moderate":cat==="Intermediate"?"mild":"normal";
 const CASE_TYPES = ["All Case Types","OB Surgical","OB Non-Surgical","Postpartum"];
 
 // ── Icons ─────────────────────────────────────────────────────────
@@ -94,73 +72,165 @@ const StepHeader = ({eyebrow,title}) => (
     <div style={{fontSize:18,fontWeight:700,color:C.grey[800],fontFamily:font}}>{title}</div>
   </div>
 );
-const TRSGauge = ({value,color,size=44}) => {
-  const w=size,h=Math.round(size*0.64),r=size*0.41,cx=size/2,cy=size/2,circ=Math.PI*r,pct=Math.min(value/10,1),stroke=circ*pct,gap=circ-stroke,arcD=`M ${cx-r} ${cy} A ${r} ${r} 0 0 1 ${cx+r} ${cy}`,fs=Math.round(size*0.25);
-  return <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}><path d={arcD} fill="none" stroke={C.grey[300]} strokeWidth="4" strokeLinecap="round"/><path d={arcD} fill="none" stroke={color} strokeWidth="4" strokeLinecap="round" strokeDasharray={`${stroke} ${gap}`}/><text x={cx} y={h} textAnchor="middle" fontSize={fs} fontWeight="700" fill={color} fontFamily={font}>{value}</text></svg>;
-};
-
-// ── TRS calculator ────────────────────────────────────────────────
-const calcTRS = (p) => {
-  let score=0; const full=[];
-  const hgb=parseFloat(p.labs.find(l=>l.label==="HGB")?.value??99);
-  const hs=hgb<10?2:hgb<13?1:0; score+=hs;
-  full.push({label:"Hemoglobin",value:hgb+" g/dL",criteria:hgb<10?"<10.0":hgb<13?"10–12.9":"≥13",maxPts:2,earnedPts:hs});
-  const crLab=p.labs.find(l=>l.label==="Creatinine"); const cr=crLab?parseFloat(crLab.value):0;
-  const cs=cr>=2?2:cr>=1.2?1:0; score+=cs;
-  full.push({label:"Creatinine",value:(crLab?.value??"N/A")+" mg/dL",criteria:cr>=2?"≥2.0":cr>=1.2?"1.2–1.9":"<1.2",maxPts:2,earnedPts:cs});
-  const wt=parseFloat(p.weight); const ws=wt<75?1:0; score+=ws;
-  full.push({label:"Weight",value:p.weight,criteria:wt<75?"<75 kg":">75",maxPts:1,earnedPts:ws});
-  score+=1; full.push({label:"Gender",value:"female",criteria:"female",maxPts:1,earnedPts:1});
-  const as=p.age>=65?1:0; score+=as;
-  full.push({label:"Age",value:p.age+" years",criteria:p.age>=65?"≥65":"<65",maxPts:1,earnedPts:as});
-  full.push({label:"Surgery Timing",value:"≥2 weeks",criteria:"scheduled",maxPts:1,earnedPts:0});
-  const rs=p.redoOrNonIsolated?1:0; score+=rs;
-  full.push({label:"Redo Procedure",value:p.redoOrNonIsolated?"Yes":"No",criteria:"previous surgery",maxPts:1,earnedPts:rs});
-  full.push({label:"Non-Isolated Surgery",value:"No",criteria:"complex procedure",maxPts:1,earnedPts:0});
-  const cms=p.significantComorbidities?1:0; score+=cms;
-  full.push({label:"Comorbidities",value:p.significantComorbidities?"Present":"None",criteria:"significant",maxPts:1,earnedPts:cms});
-  full.push({label:"Anticoagulant Use",value:"No",criteria:"bleeding-risk meds",maxPts:1,earnedPts:0});
-  let category,trsSev;
-  if(score>=4){category="Very High Risk";trsSev="very-high";}
-  else if(score===3){category="High Risk";trsSev="high";}
-  else if(score===2){category="Intermediate Risk";trsSev="medium";}
-  else{category="Low Risk";trsSev="low";}
-  const actions={"low":["Routine monitoring","Oral iron if Hgb <12","Standard blood conservation","Re-evaluate if status changes"],"medium":["Enhanced anemia monitoring","Consider IV iron therapy","Blood conservation strategy","Discuss transfusion threshold"],"high":["IV iron therapy if Hgb <13 g/dL","Type and crossmatch 2–4 units","Multidisciplinary planning","Consider erythropoietin","Cell salvage recommended"],"very-high":["Urgent IV iron and/or EPO","Type and crossmatch ≥4 units","Delay elective procedure","Cell salvage mandatory"]}[trsSev];
-  return {score,category,trsSev,fullBreakdown:full,actions};
-};
-
-// ── ACOG calculator — 12 conditions ──────────────────────────────
-const ACOG_CONDITIONS = [
-  {name:"Multiple Gestations",  pts:30, icd:"O30.C30"},
-  {name:"History Preterm Labor",pts:20, icd:"O09.21"},
-  {name:"Hypertension",         pts:15, icd:"I10–I13"},
-  {name:"Anemia",               pts:15, icd:"D50, O99.011"},
-  {name:"Cardiac Disease",      pts:15, icd:"I00–I52"},
-  {name:"Diabetes",             pts:12, icd:"O24, E11"},
-  {name:"Placenta Previa",      pts:12, icd:"O44"},
-  {name:"Prior Cesarean",       pts:10, icd:"O34.21"},
-  {name:"Obesity",              pts:10, icd:"E66, O99.21"},
-  {name:"Recent Pregnancy",     pts:10, icd:"Z33"},
-  {name:"Advanced Maternal Age",pts:8,  icd:"O09.52"},
-  {name:"Thyroid Disease",      pts:8,  icd:"O99.28, E00–E07"},
+// ── Maternal Health Risk Score — 6-domain engine (max 74) ──────
+const MHR_DOMAINS = [
+  {id:"hematologic",  name:"Hematologic Reserve",              cap:16, icon:"🩸"},
+  {id:"placental",   name:"Placental & Hemorrhage Risk",      cap:20, icon:"🩺"},
+  {id:"delivery",    name:"Delivery & Obstetric History",      cap:10, icon:"📋"},
+  {id:"demographics",name:"Maternal Demographics & Physiology",cap:6,  icon:"👤"},
+  {id:"comorbidities",name:"Maternal Comorbidities",           cap:17, icon:"🏥"},
+  {id:"medication",  name:"Medication & Treatment Factors",    cap:5,  icon:"💊"},
 ];
-const calcACOG = (p) => {
-  let score=15; const contribs=[];
-  ACOG_CONDITIONS.forEach(c=>{
-    if(p.comorbidities.includes(c.name)){score+=c.pts;contribs.push({...c});}
-  });
-  const color=score>=80?C.error[400]:score>=60?C.orange[400]:score>=40?"#92600A":C.success[400];  const cat  =score>=80?"Critical":score>=60?"High":score>=40?"Moderate":"Low";
-  return {score,color,cat,contribs,baseline:15,condPts:score-15};
+const MHR_TIERS = [
+  {min:0,  label:"Low",         tier:"normal",   color:C.success[400], interp:"No major identified maternal health risk factors"},
+  {min:10, label:"Intermediate", tier:"mild",     color:"#92600A",     interp:"One or more meaningful maternal health risk factors present"},
+  {min:20, label:"High",         tier:"moderate", color:C.orange[400], interp:"Multiple or significant maternal health risk factors; pre-delivery optimization recommended"},
+  {min:35, label:"Very High",    tier:"severe",   color:C.error[400],  interp:"Major maternal health risk; multidisciplinary planning and blood-bank preparedness recommended"},
+];
+const mhrTierInfo=(score)=>MHR_TIERS.reduce((a,t)=>score>=t.min?t:a,MHR_TIERS[0]);
+const calcMHR = (p) => {
+  const m = p.mhr || {};
+  const domains = [];
+  // ── Domain 1: Hematologic Reserve (cap 16) ──
+  {const f=[];let r=0;
+    const hgb=parseFloat(p.labs.find(l=>l.label==="HGB")?.value??99);
+    let hp=0,hc="≥13.0 g/dL";
+    if(hgb<8){hp=6;hc="<8.0 g/dL";}else if(hgb<10){hp=4;hc="8.0–9.9 g/dL";}else if(hgb<11){hp=2;hc="10.0–10.9 g/dL";}else if(hgb<13){hp=1;hc="11.0–12.9 g/dL";}
+    r+=hp;f.push({label:"Hemoglobin",value:`${hgb} g/dL`,criteria:hc,points:hp,max:6});
+    const pltLab=p.labs.find(l=>l.label==="Platelets");const plt=pltLab?parseFloat(pltLab.value):999;
+    let pp=0,pc="≥150 ×10⁹/L";
+    if(plt<50){pp=5;pc="<50 ×10⁹/L";}else if(plt<100){pp=4;pc="50–99 ×10⁹/L";}else if(plt<150){pp=2;pc="100–149 ×10⁹/L";}
+    r+=pp;f.push({label:"Platelets",value:`${plt} ×10⁹/L`,criteria:pc,points:pp,max:5});
+    const ferLab=p.labs.find(l=>l.label==="Ferritin");const fer=ferLab?parseFloat(ferLab.value):999;
+    const tsatLab=p.labs.find(l=>l.label==="Transferrin Sat");const tsat=tsatLab?parseFloat(tsatLab.value):999;
+    let ip=0,ic="Ferritin ≥100, TSAT ≥20%";
+    if(fer<30||tsat<20){ip=2;ic=fer<30?`Ferritin ${fer} ng/mL (<30)`:`TSAT ${tsat}% (<20%)`;}else if(fer<=100){ip=1;ic=`Ferritin ${fer} ng/mL (30–100)`;}
+    r+=ip;f.push({label:"Iron Deficiency",value:`Ferritin ${fer} ng/mL, TSAT ${tsat}%`,criteria:ic,points:ip,max:2});
+    let cp=0,cc="No coagulopathy";
+    if((m.pt!=null&&m.pt>3)||(m.inr!=null&&m.inr>1.5)||(m.fibrinogen!=null&&m.fibrinogen<200)){cp=3;const parts=[];if(m.pt!=null&&m.pt>3)parts.push(`PT ${m.pt}s (>3)`);if(m.inr!=null&&m.inr>1.5)parts.push(`INR ${m.inr} (>1.5)`);if(m.fibrinogen!=null&&m.fibrinogen<200)parts.push(`Fibrinogen ${m.fibrinogen} mg/dL (<200)`);cc=parts.join(", ");}
+    r+=cp;f.push({label:"Significant Coagulopathy",value:cp>0?"Present":"None",criteria:cc,points:cp,max:3});
+    domains.push({id:"hematologic",name:"Hematologic Reserve",cap:16,raw:r,clamped:Math.min(r,16),factors:f});
+  }
+  // ── Domain 2: Placental & Hemorrhage Risk (cap 20) ──
+  {const f=[];let r=0;
+    const pm={"percreta":{l:"Placenta Percreta",p:15,i:"O43.23"},"increta":{l:"Placenta Increta",p:12,i:"O43.22"},"accreta":{l:"Placenta Accreta",p:10,i:"O43.21"},"abruption":{l:"Placental Abruption",p:6,i:"O45.001–O45.93"},"previa":{l:"Placenta Previa",p:5,i:"O44.00–O44.33"},"low-lying":{l:"Low-lying Placenta",p:2,i:"O44.40–O44.53"}};
+    if(m.placental&&pm[m.placental]){const d=pm[m.placental];r+=d.p;f.push({label:d.l,value:"Suspected/known",criteria:d.l,points:d.p,max:15,icd:d.i});}
+    else{f.push({label:"Placental Diagnosis",value:"None",criteria:"No placental pathology",points:0,max:15});}
+    if(m.priorPPH){r+=3;f.push({label:"Prior Postpartum Hemorrhage",value:"Yes",criteria:"Required intervention/transfusion",points:3,max:3,icd:"O09.291–O09.299"});}
+    else{f.push({label:"Prior Postpartum Hemorrhage",value:"No",criteria:"No prior PPH",points:0,max:3,icd:"O09.291–O09.299"});}
+    if(m.uterinePathology){r+=2;f.push({label:"Uterine Pathology",value:"Yes",criteria:"Significant fibroids/other",points:2,max:2,icd:"O34.00–O34.23"});}
+    else{f.push({label:"Uterine Pathology",value:"No",criteria:"No uterine pathology",points:0,max:2,icd:"O34.00–O34.23"});}
+    domains.push({id:"placental",name:"Placental & Hemorrhage Risk",cap:20,raw:r,clamped:Math.min(r,20),factors:f});
+  }
+  // ── Domain 3: Delivery & Obstetric History (cap 10) ──
+  {const f=[];let r=0;
+    const pc=m.priorCesareanCount||0;
+    if(pc>=2){r+=2;f.push({label:"Prior Cesarean",value:`${pc} prior C-sections`,criteria:"2 prior C-sections",points:2,max:2,icd:"O34.211–O34.29"});}
+    else{f.push({label:"Prior Cesarean",value:pc>0?`${pc} prior`:"None",criteria:"<2 prior C-sections",points:0,max:2,icd:"O34.211–O34.29"});}
+    if(m.plannedCesarean){r+=1;f.push({label:"Planned Cesarean",value:"Yes",criteria:"Elective/planned C-section",points:1,max:1,icd:"O82"});}
+    else{f.push({label:"Planned Cesarean",value:"No",criteria:"Not planned",points:0,max:1,icd:"O82"});}
+    if(m.multipleGestation==="triples+"){r+=3;f.push({label:"Multiple Gestation",value:"≥3 fetuses",criteria:"≥3 fetuses",points:3,max:3,icd:"O30.1–O30.2"});}
+    else if(m.multipleGestation==="twins"){r+=2;f.push({label:"Multiple Gestation",value:"Twins",criteria:"Twins",points:2,max:2,icd:"O30.0"});}
+    else{f.push({label:"Multiple Gestation",value:"Singleton",criteria:"Singleton",points:0,max:3});}
+    if(m.grandMultiparity){r+=2;f.push({label:"Grand Multiparity",value:"≥5 prior births",criteria:"≥5 prior births",points:2,max:2,icd:"O09.40–O09.43"});}
+    else{f.push({label:"Grand Multiparity",value:"<5 prior births",criteria:"<5 prior births",points:0,max:2,icd:"O09.40–O09.43"});}
+    if(m.priorUterineSurgery){r+=2;f.push({label:"Prior Uterine Surgery",value:"Yes",criteria:"Myomectomy, major D&C, etc.",points:2,max:2,icd:"Z98.891"});}
+    else{f.push({label:"Prior Uterine Surgery",value:"No",criteria:"None",points:0,max:2,icd:"Z98.891"});}
+    domains.push({id:"delivery",name:"Delivery & Obstetric History",cap:10,raw:r,clamped:Math.min(r,10),factors:f});
+  }
+  // ── Domain 4: Maternal Demographics & Physiology (cap 6) ──
+  {const f=[];let r=0;
+    if(p.age>=40){r+=2;f.push({label:"Maternal Age",value:`${p.age} years`,criteria:"≥40",points:2,max:2});}
+    else if(p.age>=35){r+=1;f.push({label:"Maternal Age",value:`${p.age} years`,criteria:"35–39",points:1,max:2});}
+    else{f.push({label:"Maternal Age",value:`${p.age} years`,criteria:"<35",points:0,max:2});}
+    const bmi=parseFloat(p.bmi);
+    if(bmi>=40){r+=2;f.push({label:"BMI",value:p.bmi,criteria:"≥40",points:2,max:2});}
+    else if(bmi>=30){r+=1;f.push({label:"BMI",value:p.bmi,criteria:"30–39.9",points:1,max:2});}
+    else if(bmi<18.5){r+=1;f.push({label:"BMI",value:p.bmi,criteria:"<18.5",points:1,max:2});}
+    else{f.push({label:"BMI",value:p.bmi,criteria:"18.5–29.9",points:0,max:2});}
+    const ga=parseInt(p.gestAge);
+    if(ga<37){r+=2;f.push({label:"Gestational Age",value:p.gestAge,criteria:"<37 weeks",points:2,max:2});}
+    else if(ga>41){r+=1;f.push({label:"Gestational Age",value:p.gestAge,criteria:">41 weeks",points:1,max:2});}
+    else{f.push({label:"Gestational Age",value:p.gestAge,criteria:"37–41 weeks",points:0,max:2});}
+    domains.push({id:"demographics",name:"Maternal Demographics & Physiology",cap:6,raw:r,clamped:Math.min(r,6),factors:f});
+  }
+  // ── Domain 5: Maternal Comorbidities (cap 17) ──
+  {const f=[];let r=0;
+    const ht=m.hypertensiveDisorder;
+    if(ht==="severe-preeclampsia"){r+=3;f.push({label:"Severe Preeclampsia",value:"Severe features",criteria:"Severe features",points:3,max:3,icd:"O14.10, O14.12–O14.15"});}
+    else if(ht==="preeclampsia"){r+=2;f.push({label:"Preeclampsia",value:"Present",criteria:"Preeclampsia",points:2,max:3,icd:"O14.0, O14.9, O11"});}
+    else if(ht=="gestational"){r+=1;f.push({label:"Gestational Hypertension",value:"Present",criteria:"Gestational hypertension",points:1,max:3,icd:"O10, O12, O13"});}
+    else{f.push({label:"Hypertensive Disorder",value:"None",criteria:"No hypertensive disorder",points:0,max:3});}
+    if(m.cardiacDisease){r+=3;f.push({label:"Cardiac Disease",value:"Present",criteria:"Significant maternal cardiac disease",points:3,max:3,icd:"O99.41–O99.43"});}
+    else{f.push({label:"Cardiac Disease",value:"None",criteria:"No cardiac disease",points:0,max:3,icd:"O99.41–O99.43"});}
+    if(m.renalDisease){r+=2;f.push({label:"Renal Disease",value:"Present",criteria:"Significant chronic renal disease",points:2,max:2,icd:"O26.83–O26.839"});}
+    else{f.push({label:"Renal Disease",value:"None",criteria:"No renal disease",points:0,max:2,icd:"O26.83–O26.839"});}
+    if(m.liverDisease){r+=2;f.push({label:"Liver Disease",value:"Present",criteria:"Significant liver disease",points:2,max:2,icd:"O26.6, O98.4, O99.8"});}
+    else{f.push({label:"Liver Disease",value:"None",criteria:"No liver disease",points:0,max:2,icd:"O26.6, O98.4, O99.8"});}
+    if(m.hematologicDisease){r+=2;f.push({label:"Hematologic Disease",value:"Present",criteria:"Sickle cell/thalassemia/other",points:2,max:2,icd:"D57.00–D57.819, D56.0–D56.9"});}
+    else{f.push({label:"Hematologic Disease",value:"None",criteria:"No hematologic disease",points:0,max:2,icd:"D57.00–D57.819, D56.0–D56.9"});}
+    if(m.bleedingDisorder){r+=4;f.push({label:"Bleeding Disorder",value:"Present",criteria:"Known clinically significant",points:4,max:4,icd:"D68.00–D68.09, D66, D67"});}
+    else{f.push({label:"Bleeding Disorder",value:"None",criteria:"No bleeding disorder",points:0,max:4,icd:"D68.00–D68.09, D66, D67"});}
+    if(m.pregestationalDiabetes){r+=1;f.push({label:"Pregestational Diabetes",value:"Present",criteria:"Pregestational diabetes",points:1,max:1,icd:"O24.011–O24.319"});}
+    else{f.push({label:"Pregestational Diabetes",value:"None",criteria:"No pregestational diabetes",points:0,max:1,icd:"O24.011–O24.319"});}
+    if(m.gestationalDiabetes){r+=1;f.push({label:"Gestational Diabetes",value:"Present",criteria:"Gestational diabetes (A1 or A2)",points:1,max:1,icd:"O24.A1–O24.A2"});}
+    else{f.push({label:"Gestational Diabetes",value:"None",criteria:"No gestational diabetes",points:0,max:1,icd:"O24.A1–O24.A2"});}
+    domains.push({id:"comorbidities",name:"Maternal Comorbidities",cap:17,raw:r,clamped:Math.min(r,17),factors:f});
+  }
+  // ── Domain 6: Medication & Treatment Factors (cap 5) ──
+  {const f=[];let r=0;
+    if(m.anticoagulationStatus==="therapeutic"){r+=3;f.push({label:"Therapeutic Anticoagulation",value:"Therapeutic",criteria:"LMWH/UFH/warfarin/apixaban, etc.",points:3,max:3});}
+    else if(m.anticoagulationStatus=="prophylactic"){r+=1;f.push({label:"Prophylactic Anticoagulation",value:"Prophylactic",criteria:"Prophylactic-dose anticoagulation",points:1,max:3});}
+    else{f.push({label:"Anticoagulation",value:"None",criteria:"No anticoagulation",points:0,max:3});}
+    if(m.antiplateletAgent==="low_dose_aspirin"){r+=1;f.push({label:"Antiplatelet Therapy",value:"Low-dose aspirin",criteria:"Aspirin/other antiplatelet",points:1,max:1});}
+    else{f.push({label:"Antiplatelet Therapy",value:"None",criteria:"No antiplatelet",points:0,max:1});}
+    domains.push({id:"medication",name:"Medication & Treatment Factors",cap:5,raw:r,clamped:Math.min(r,5),factors:f});
+  }
+  // ── Risk drivers: flatten all earned factors into a list with modifiable flag + severity ──
+  const MODIFIABLE = new Set(["Hemoglobin","Iron Deficiency","Platelets","Significant Coagulopathy","BMI","Anticoagulation","Antiplatelet Therapy","Prophylactic Anticoagulation","Therapeutic Anticoagulation","Prior Postpartum Hemorrhage","Uterine Pathology","Severe Preeclampsia","Preeclampsia","Gestational Hypertension","Pregestational Diabetes","Gestational Diabetes"]);
+  const drivers = [];
+  domains.forEach(d => d.factors.forEach(f => {
+    if(f.points > 0) {
+      const sev = f.points >= f.max * 0.6 ? "high" : f.points >= f.max * 0.3 ? "moderate" : "mild";
+      drivers.push({label:f.label, value:f.value, modifiable:MODIFIABLE.has(f.label), severity:sev, domain:d.name});
+    }
+  }));
+  const modifiableDrivers = drivers.filter(d=>d.modifiable);
+  const nonModifiableDrivers = drivers.filter(d=>!d.modifiable);
+
+  // ── Missing inputs detection ──
+  const missing = [];
+  if(!p.labs.find(l=>l.label==="HGB")) missing.push("Hemoglobin");
+  if(!p.labs.find(l=>l.label==="Platelets")) missing.push("Platelets");
+  if(!p.labs.find(l=>l.label==="Ferritin")) missing.push("Ferritin");
+  if(!p.labs.find(l=>l.label==="Transferrin Sat")) missing.push("Transferrin Saturation");
+  if(m.pt==null) missing.push("PT");
+  if(m.inr==null) missing.push("INR");
+  if(m.fibrinogen==null) missing.push("Fibrinogen");
+  if(m.placental===undefined) missing.push("Placental Diagnosis");
+  if(m.priorPPH===undefined) missing.push("Prior PPH History");
+  if(m.priorCesareanCount===undefined) missing.push("Prior Cesarean Count");
+  if(m.hypertensiveDisorder===undefined) missing.push("Hypertensive Disorder Status");
+  if(m.gestationalDiabetes===undefined) missing.push("Gestational Diabetes Status");
+  if(m.anticoagulationStatus===undefined) missing.push("Anticoagulation Status");
+
+  // ── Probability estimate (sigmoid mapping 0–74 → 1–95%) ──
+  const score=domains.reduce((s,d)=>s+d.clamped,0);
+  const ti=mhrTierInfo(score);
+  const activeDomains=domains.filter(d=>d.clamped>0).length;
+  return {score,color:ti.color,cat:ti.label,tier:ti.tier,interp:ti.interp,domains,maxPossible:74,activeDomains,drivers,modifiableDrivers,nonModifiableDrivers,missing,calcComplete:missing.length===0};
 };
 
 // ── Patient data — 6 patients covering Critical / High / Low severity ──
 const PATIENTS = [
   // CRITICAL — HGB < 8, many ACOG conditions
   { id:"MR-7821", name:"Maria Rodriguez", age:34, dob:"03/15/1992", sex:"Female", weight:"68 kg", bmi:"24.2", npi:"1122334455", domain:"OB Anemia", caseType:"OB Surgical",
-    gestAge:"32 wks", edd:"06/01/2026", parity:"G4P2", redoOrNonIsolated:false, significantComorbidities:true, anticoagulants:false,
+    gestAge:"32 wks", edd:"06/01/2026", followUpDate:"04/23/2026", parity:"G4P2", redoOrNonIsolated:false, significantComorbidities:true, anticoagulants:false,
     labs:[{label:"HGB",value:"7.2",unit:"g/dL",status:"critical",draws:[{date:"Apr 5",value:9.6},{date:"Apr 7",value:8.4},{date:"Apr 9",value:7.2}]},{label:"Ferritin",value:"6",unit:"ng/mL",status:"critical"},{label:"TIBC",value:"480",unit:"mcg/dL",status:"high"},{label:"Transferrin Sat",value:"4",unit:"%",status:"critical"},{label:"Reticulocytes",value:"0.9",unit:"%",status:"low"},{label:"WBC",value:"10.2",unit:"K/uL",status:"high"},{label:"Platelets",value:"168",unit:"K/uL",status:"low"},{label:"Creatinine",value:"0.8",unit:"mg/dL",status:"low"}],
+    mhr:{placental:"previa",priorPPH:true,uterinePathology:false,priorCesareanCount:0,plannedCesarean:true,multipleGestation:"twins",grandMultiparity:false,priorUterineSurgery:false,hypertensiveDisorder:"gestational",cardiacDisease:true,renalDisease:false,liverDisease:false,hematologicDisease:false,bleedingDisorder:false,pregestationalDiabetes:true,gestationalDiabetes:true,anticoagulationStatus:"none",antiplateletAgent:null,pt:14,inr:1.1,fibrinogen:280},
     comorbidities:["Multiple Gestations","History Preterm Labor","Hypertension","Anemia","Cardiac Disease","Diabetes"],
     conditions:["Multiple Gestations","Hypertension","Iron Deficiency Anemia","Gestational Diabetes"],
+    bp:"142/91",
     order:"IV Iron – Ferric Carboxymaltose 1000mg STAT + MFM consult",
     provider:"Dr. Chen", providerRole:"OB/GYN", unit:"OB High Risk", admitDate:"Apr 5, 2026",
     severity:"Critical", carePlanStatus:"pending", aiConfidence:94,
@@ -172,10 +242,12 @@ const PATIENTS = [
 
   // CRITICAL — HGB < 8, different condition mix
   { id:"SM-9643", name:"Sarah Martinez", age:31, dob:"07/22/1994", sex:"Female", weight:"72 kg", bmi:"25.8", npi:"1122334456", domain:"OB Anemia", caseType:"OB Non-Surgical",
-    gestAge:"30 wks", edd:"06/16/2026", parity:"G2P1", redoOrNonIsolated:true, significantComorbidities:true, anticoagulants:false,
+    gestAge:"30 wks", edd:"06/16/2026", followUpDate:"04/21/2026", parity:"G2P1", redoOrNonIsolated:true, significantComorbidities:true, anticoagulants:false,
     labs:[{label:"HGB",value:"7.8",unit:"g/dL",status:"critical",draws:[{date:"Apr 8",value:9.1},{date:"Apr 9",value:7.8}]},{label:"Ferritin",value:"9",unit:"ng/mL",status:"critical"},{label:"TIBC",value:"398",unit:"mcg/dL",status:"high"},{label:"Transferrin Sat",value:"6",unit:"%",status:"critical"},{label:"Reticulocytes",value:"0.9",unit:"%",status:"low"},{label:"WBC",value:"8.3",unit:"K/uL",status:"low"},{label:"Platelets",value:"210",unit:"K/uL",status:"low"},{label:"Creatinine",value:"0.7",unit:"mg/dL",status:"low"}],
+    mhr:{placental:"accreta",priorPPH:false,uterinePathology:false,priorCesareanCount:1,plannedCesarean:false,multipleGestation:null,grandMultiparity:false,priorUterineSurgery:false,hypertensiveDisorder:null,cardiacDisease:false,renalDisease:false,liverDisease:false,hematologicDisease:false,bleedingDisorder:false,pregestationalDiabetes:false,gestationalDiabetes:false,anticoagulationStatus:"none",antiplateletAgent:null,pt:13,inr:1.0,fibrinogen:300},
     comorbidities:["Multiple Gestations","History Preterm Labor","Anemia","Prior Cesarean","Placenta Previa"],
     conditions:["Multiple Gestations","Preterm Labor Risk","Placenta Previa","Severe Iron Deficiency"],
+    bp:"118/76",
     order:"IV Iron – Ferumoxytol 510mg x2 + High-risk monitoring",
     provider:"Dr. Patel", providerRole:"MFM", unit:"OB High Risk", admitDate:"Apr 7, 2026",
     severity:"Critical", carePlanStatus:"in-progress", aiConfidence:91,
@@ -187,10 +259,12 @@ const PATIENTS = [
 
   // HIGH — HGB 8–11, moderate ACOG conditions
   { id:"PS-0081", name:"Priya Sharma", age:29, dob:"11/08/1996", sex:"Female", weight:"63 kg", bmi:"22.4", npi:"1122334457", domain:"OB Anemia", caseType:"OB Non-Surgical",
-    gestAge:"28 wks", edd:"07/01/2026", parity:"G1P0", redoOrNonIsolated:false, significantComorbidities:false, anticoagulants:false,
+    gestAge:"28 wks", edd:"07/01/2026", followUpDate:"04/24/2026", parity:"G1P0", redoOrNonIsolated:false, significantComorbidities:false, anticoagulants:false,
     labs:[{label:"HGB",value:"9.2",unit:"g/dL",status:"high",draws:[{date:"Apr 6",value:10.4},{date:"Apr 9",value:9.2}]},{label:"Ferritin",value:"11",unit:"ng/mL",status:"high"},{label:"TIBC",value:"380",unit:"mcg/dL",status:"high"},{label:"Transferrin Sat",value:"12",unit:"%",status:"high"},{label:"Reticulocytes",value:"1.4",unit:"%",status:"low"},{label:"WBC",value:"8.8",unit:"K/uL",status:"low"},{label:"Platelets",value:"228",unit:"K/uL",status:"low"},{label:"Creatinine",value:"0.6",unit:"mg/dL",status:"low"}],
+    mhr:{placental:null,priorPPH:false,uterinePathology:false,priorCesareanCount:0,plannedCesarean:false,multipleGestation:null,grandMultiparity:false,priorUterineSurgery:false,hypertensiveDisorder:null,cardiacDisease:false,renalDisease:false,liverDisease:false,hematologicDisease:false,bleedingDisorder:false,pregestationalDiabetes:false,gestationalDiabetes:false,anticoagulationStatus:"none",antiplateletAgent:"low_dose_aspirin",pt:12,inr:1.0,fibrinogen:350},
     comorbidities:["Anemia","Thyroid Disease","Advanced Maternal Age"],
     conditions:["Gestational Iron Deficiency Anemia","Hypothyroidism"],
+    bp:"115/72",
     order:"IV Iron – Ferric Carboxymaltose 750mg + Thyroid monitoring",
     provider:"Dr. Nguyen", providerRole:"OB/GYN", unit:"OB Outpatient", admitDate:"Apr 8, 2026",
     severity:"High", carePlanStatus:"generated", aiConfidence:87,
@@ -202,10 +276,12 @@ const PATIENTS = [
 
   // HIGH — HGB 8–11, obesity + hypertension mix
   { id:"JW-3431", name:"Jennifer Washington", age:38, dob:"02/14/1988", sex:"Female", weight:"98 kg", bmi:"34.2", npi:"1122334458", domain:"OB Anemia", caseType:"OB Surgical",
-    gestAge:"24 wks", edd:"07/27/2026", parity:"G5P2", redoOrNonIsolated:false, significantComorbidities:true, anticoagulants:false,
+    gestAge:"24 wks", edd:"07/27/2026", followUpDate:"04/20/2026", parity:"G5P2", redoOrNonIsolated:false, significantComorbidities:true, anticoagulants:false,
     labs:[{label:"HGB",value:"10.1",unit:"g/dL",status:"high",draws:[{date:"Apr 5",value:10.8},{date:"Apr 9",value:10.1}]},{label:"Ferritin",value:"22",unit:"ng/mL",status:"high"},{label:"TIBC",value:"342",unit:"mcg/dL",status:"high"},{label:"Transferrin Sat",value:"18",unit:"%",status:"high"},{label:"Reticulocytes",value:"1.6",unit:"%",status:"low"},{label:"WBC",value:"7.9",unit:"K/uL",status:"low"},{label:"Platelets",value:"244",unit:"K/uL",status:"low"},{label:"Creatinine",value:"0.9",unit:"mg/dL",status:"low"}],
+    mhr:{placental:null,priorPPH:false,uterinePathology:true,priorCesareanCount:0,plannedCesarean:true,multipleGestation:null,grandMultiparity:true,priorUterineSurgery:false,hypertensiveDisorder:"gestational",cardiacDisease:false,renalDisease:false,liverDisease:false,hematologicDisease:false,bleedingDisorder:false,pregestationalDiabetes:false,gestationalDiabetes:false,anticoagulationStatus:"none",antiplateletAgent:null,pt:13,inr:1.1,fibrinogen:290},
     comorbidities:["Hypertension","Anemia","Obesity","Advanced Maternal Age","Recent Pregnancy"],
     conditions:["Hypertension","Anemia of Pregnancy","Obesity","Multiparity"],
+    bp:"138/88",
     order:"IV Iron – Ferric Carboxymaltose 750mg + Nephrology consult",
     provider:"Dr. Kim", providerRole:"MFM", unit:"OB Outpatient", admitDate:"Apr 6, 2026",
     severity:"High", carePlanStatus:"pending", aiConfidence:83,
@@ -217,10 +293,12 @@ const PATIENTS = [
 
   // LOW — HGB ≥ 11, minimal conditions
   { id:"AT-9012", name:"Ashley Thompson", age:26, dob:"09/05/2000", sex:"Female", weight:"61 kg", bmi:"22.0", npi:"1122334459", domain:"OB Anemia", caseType:"Postpartum",
-    gestAge:"20 wks", edd:"08/27/2026", parity:"G1P0", redoOrNonIsolated:false, significantComorbidities:false, anticoagulants:false,
+    gestAge:"20 wks", edd:"08/27/2026", followUpDate:"04/30/2026", parity:"G1P0", redoOrNonIsolated:false, significantComorbidities:false, anticoagulants:false,
     labs:[{label:"HGB",value:"11.4",unit:"g/dL",status:"low",draws:[{date:"Apr 7",value:11.8},{date:"Apr 9",value:11.4}]},{label:"Ferritin",value:"28",unit:"ng/mL",status:"low"},{label:"TIBC",value:"295",unit:"mcg/dL",status:"low"},{label:"Transferrin Sat",value:"22",unit:"%",status:"low"},{label:"Reticulocytes",value:"1.8",unit:"%",status:"low"},{label:"WBC",value:"8.2",unit:"K/uL",status:"low"},{label:"Platelets",value:"282",unit:"K/uL",status:"low"},{label:"Creatinine",value:"0.7",unit:"mg/dL",status:"low"}],
+    mhr:{placental:undefined,priorPPH:undefined,uterinePathology:false,priorCesareanCount:0,plannedCesarean:false,multipleGestation:null,grandMultiparity:false,priorUterineSurgery:false,hypertensiveDisorder:undefined,cardiacDisease:false,renalDisease:false,liverDisease:false,hematologicDisease:false,bleedingDisorder:false,pregestationalDiabetes:false,gestationalDiabetes:undefined,anticoagulationStatus:undefined,antiplateletAgent:null,pt:12,inr:1.0,fibrinogen:320},
     comorbidities:["Anemia"],
     conditions:["Mild Gestational Anemia","Mental Health Support"],
+    bp:"110/68",
     order:"Oral Iron – Ferrous Sulfate 325mg BID + Mental health referral",
     provider:"Dr. Williams", providerRole:"OB/GYN", unit:"OB Outpatient", admitDate:"Apr 9, 2026",
     severity:"Low", carePlanStatus:"generated", aiConfidence:82,
@@ -232,10 +310,12 @@ const PATIENTS = [
 
   // LOW — HGB ≥ 11, cardiac + thyroid
   { id:"LK-5509", name:"Linda Kowalski", age:41, dob:"06/18/1984", sex:"Female", weight:"74 kg", bmi:"26.1", npi:"1122334460", domain:"OB Anemia", caseType:"OB Non-Surgical",
-    gestAge:"18 wks", edd:"09/09/2026", parity:"G3P1", redoOrNonIsolated:false, significantComorbidities:true, anticoagulants:true,
+    gestAge:"18 wks", edd:"09/09/2026", followUpDate:"04/29/2026", parity:"G3P1", redoOrNonIsolated:false, significantComorbidities:true, anticoagulants:true,
     labs:[{label:"HGB",value:"11.8",unit:"g/dL",status:"low",draws:[{date:"Apr 4",value:12.1},{date:"Apr 9",value:11.8}]},{label:"Ferritin",value:"32",unit:"ng/mL",status:"low"},{label:"TIBC",value:"280",unit:"mcg/dL",status:"low"},{label:"Transferrin Sat",value:"24",unit:"%",status:"low"},{label:"Reticulocytes",value:"2.1",unit:"%",status:"low"},{label:"WBC",value:"7.4",unit:"K/uL",status:"low"},{label:"Platelets",value:"201",unit:"K/uL",status:"low"},{label:"Creatinine",value:"0.8",unit:"mg/dL",status:"low"}],
+    mhr:{placental:null,priorPPH:false,uterinePathology:false,priorCesareanCount:1,plannedCesarean:false,multipleGestation:null,grandMultiparity:false,priorUterineSurgery:false,hypertensiveDisorder:null,cardiacDisease:true,renalDisease:false,liverDisease:false,hematologicDisease:false,bleedingDisorder:false,pregestationalDiabetes:false,gestationalDiabetes:false,anticoagulationStatus:"prophylactic",antiplateletAgent:null,pt:13,inr:1.1,fibrinogen:310},
     comorbidities:["Cardiac Disease","Thyroid Disease","Advanced Maternal Age","Prior Cesarean"],
     conditions:["Cardiac Disease","Hypothyroidism","Advanced Maternal Age"],
+    bp:"128/82",
     order:"Oral Iron – Ferrous Gluconate 300mg + Cardiology co-management",
     provider:"Dr. Osei", providerRole:"MFM", unit:"OB Cardiac Clinic", admitDate:"Apr 8, 2026",
     severity:"Low", carePlanStatus:"in-progress", aiConfidence:78,
@@ -245,7 +325,7 @@ const PATIENTS = [
     hedis:[{name:"Prenatal & Postpartum Care (PPC)",st:"Open",close:true},{name:"Controlling High Blood Pressure (CBP)",st:"Closed",close:false},{name:"Comprehensive Diabetes Care (CDC)",st:"Closed",close:false},{name:"Depression Screening & Follow-up (DSF)",st:"Closed",close:false}],
     star:3.6, starP:3.8 },
 ];
-PATIENTS.forEach(p => { p._trs = calcTRS(p); p._acog = calcACOG(p); });
+PATIENTS.forEach(p => { p._mhr = calcMHR(p); });
 
 // ── Anemia grade helper — 4-tier per surgical consensus ──────────
 // Severe ≤8.0 · Moderate 8.1–11.0 · Mild 11.1–12.9 · No Anemia >13.0
@@ -257,115 +337,94 @@ const getAnemiaGrade = (hgb) => {
   return               {label:"Severe",   tier:"severe",   color:C.error[400],    bg:C.error[100]};
 };
 
-// ── TRS Drawer (identical to BloodHealth) ─────────────────────────
-const TRSDrawer = ({p, onClose}) => {
-  const t=p._trs; const tc=TRC[t.trsSev];
-  const riskDesc = {"low":"Low transfusion risk. Routine monitoring and optimization is sufficient.","medium":"Moderate risk. Enhanced monitoring and iron optimization recommended.","high":"High risk. Aggressive optimization and preparation required before procedure.","very-high":"Very high risk. Immediate intervention required. Consider delaying elective surgery."}[t.trsSev];
+const gaugePoint = (angle, radius = 90, center = 110) => {
+  const radians = (angle * Math.PI) / 180;
+  return {x: center + radius * Math.cos(radians), y: 106 - radius * Math.sin(radians)};
+};
+
+const gaugeArc = (startValue, endValue, maxValue = 74, gap = 1.2) => {
+  const startAngle = 180 - (startValue / maxValue) * 180 + gap;
+  const endAngle = 180 - (endValue / maxValue) * 180 - gap;
+  const start = gaugePoint(startAngle);
+  const end = gaugePoint(endAngle);
+  return `M ${start.x} ${start.y} A 90 90 0 0 1 ${end.x} ${end.y}`;
+};
+
+const MHRGauge = ({score, maxPossible, color, compact = false}) => {
+  const ranges = [
+    {min:0, max:10, color:C.success[400], label:"Low"},
+    {min:10, max:20, color:"#92600A", label:"Intermediate"},
+    {min:20, max:35, color:C.orange[400], label:"High"},
+    {min:35, max:74, color:C.error[400], label:"Very High"},
+  ];
+  const marker = gaugePoint(180 - (Math.min(score, maxPossible) / maxPossible) * 180);
+
   return (
-    <div style={{position:"fixed",inset:0,zIndex:300,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.5)",backdropFilter:"blur(4px)"}} onClick={onClose}>
-      <div style={{width:580,maxHeight:"85vh",background:C.grey[100],borderRadius:16,display:"flex",flexDirection:"column",boxShadow:"0 24px 80px rgba(0,0,0,0.25)",overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
-        <div style={{padding:"16px 20px",borderBottom:`1px solid ${C.grey[300]}`,display:"flex",alignItems:"center",gap:12,flexShrink:0,background:C.grey[100]}}>
-          <div style={{width:36,height:36,borderRadius:10,background:C.primary[100],display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><TRSGauge value={t.score} color={tc} size={28}/></div>
-          <div style={{flex:1}}>
-            <div style={{fontSize:16,fontWeight:700,color:C.grey[800],fontFamily:font,lineHeight:1.2}}>Transfusion Risk Score</div>
-            <div style={{fontSize:12,color:C.grey[600],fontFamily:font,marginTop:2}}>{p.name} · MRN {p.id}</div>
-          </div>
-          <button onClick={onClose} style={{width:32,height:32,borderRadius:8,background:C.grey[200],border:"none",color:C.grey[600],fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontFamily:font,lineHeight:1}}>✕</button>
-        </div>
-        <div style={{padding:"20px",borderBottom:`1px solid ${C.grey[300]}`,flexShrink:0,background:C.grey[100]}}>
-          <div style={{display:"flex",alignItems:"center",gap:20}}>
-            <div style={{background:C.grey[200],borderRadius:12,padding:"16px 20px",textAlign:"center",minWidth:100,flexShrink:0}}>
-              <div style={{fontSize:48,fontWeight:500,color:tc,fontFamily:font,lineHeight:1,letterSpacing:"-0.03em"}}>{t.score}</div>
-              <div style={{marginTop:6}}><SevChip tier={trsTier(t.trsSev)}/></div>
-            </div>
-            <div style={{flex:1}}>
-              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-                <div style={{height:6,flex:1,background:C.grey[300],borderRadius:999,overflow:"hidden"}}>
-                  <div style={{height:"100%",width:`${Math.min(t.score/10*100,100)}%`,background:tc,borderRadius:999,transition:"width 0.4s ease"}}/>
-                </div>
-                <span style={{fontSize:12,fontWeight:600,color:tc,fontFamily:font,flexShrink:0}}>{t.score}/10</span>
-              </div>
-              <p style={{fontSize:14,color:C.grey[700],fontFamily:font,lineHeight:1.6,margin:0}}>{riskDesc}</p>
-            </div>
-          </div>
-        </div>
-        <div style={{flex:1,overflowY:"auto",padding:"16px 20px",display:"flex",flexDirection:"column",gap:12,background:C.grey[100]}}>
-          <div>
-            <div style={{fontSize:12,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",color:C.grey[600],fontFamily:font,marginBottom:8}}>Score Breakdown</div>
-            <div style={{background:C.grey[100],borderRadius:10,overflow:"hidden",border:`1px solid ${C.grey[300]}`}}>
-              {t.fullBreakdown.map((f,i) => {
-                const sc = f.earnedPts > 0;
-                return (
-                  <div key={i} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",borderBottom:i<t.fullBreakdown.length-1?`1px solid ${C.grey[300]}`:"none",background:sc?"#fff":C.grey[200]}}>
-                    <div style={{width:20,height:20,borderRadius:6,background:sc?tc:C.grey[300],display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                      <span style={{fontSize:10,fontWeight:700,color:"#fff"}}>{sc?"✓":"–"}</span>
-                    </div>
-                    <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontSize:14,fontWeight:sc?600:400,color:sc?C.grey[800]:C.grey[500],fontFamily:font}}>{f.label}</div>
-                      <div style={{fontSize:12,color:C.grey[500],fontFamily:font,marginTop:1}}>{f.value} · {f.criteria}</div>
-                    </div>
-                    <div style={{flexShrink:0,textAlign:"right"}}>
-                      <span style={{fontSize:14,fontWeight:700,color:sc?tc:C.grey[400],fontFamily:font}}>{sc?`+${f.earnedPts}`:"+0"}</span>
-                      <span style={{fontSize:12,color:C.grey[400],fontFamily:font,marginLeft:2}}>/{f.maxPts}</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-          <div>
-            <div style={{background:C.grey[200],borderRadius:10,border:`1px solid ${C.grey[300]}`,padding:"14px 16px",marginBottom:10}}>
-              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
-                <span style={{fontSize:16}}>💡</span>
-                <span style={{fontSize:14,fontWeight:700,color:C.grey[800],fontFamily:font}}>Recommended Actions</span>
-              </div>
-              {t.actions.map((a,i) => (
-                <div key={i} style={{display:"flex",gap:8,alignItems:"flex-start",marginBottom:i<t.actions.length-1?8:0,fontSize:14,color:C.grey[700],fontFamily:font,lineHeight:1.5}}>
-                  <span style={{color:C.grey[500],flexShrink:0,marginTop:1}}>·</span>{a}
-                </div>
-              ))}
-            </div>
-            <div style={{background:C.success[100],border:"1px solid rgba(56,128,50,0.2)",borderRadius:10,padding:"12px 16px"}}>
-              <div style={{fontSize:12,color:C.success[400],fontFamily:font,lineHeight:1.6,fontStyle:"italic"}}>
-                <strong style={{fontStyle:"normal"}}>Evidence Base:</strong> Transfusion Risk Score validated in cardiac surgery populations (Karkouti et al., Anesthesiology 2006). Predictive accuracy for perioperative transfusion requirement: AUC 0.78–0.82.
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div style={{width:compact?118:260,flexShrink:0,textAlign:"center",fontFamily:font}}>
+      <svg viewBox="0 0 220 132" width="100%" role="img" aria-label={`Maternal health risk score ${score} of ${maxPossible}`}>
+        <path d={gaugeArc(0,maxPossible,maxPossible)} fill="none" stroke={C.grey[400]} strokeWidth="14" strokeLinecap="round"/>
+        {score > 0 && <path d={gaugeArc(0,Math.min(score,maxPossible),maxPossible,1.2)} fill="none" stroke={color} strokeWidth="14" strokeLinecap="round" style={{transition:"stroke-dashoffset 0.4s ease"}}/>}
+        <circle cx={marker.x} cy={marker.y} r="6" fill="#fff" stroke={color} strokeWidth="3"/>
+        <text x="110" y="88" textAnchor="middle" fill={color} fontSize="34" fontWeight="700" fontFamily={font}>{score}<tspan fill={C.grey[500]} fontSize="14" fontWeight="600"> / {maxPossible}</tspan></text>
+        <text x="110" y="106" textAnchor="middle" fill={C.grey[500]} fontSize="10" fontWeight="600" letterSpacing="1.2" fontFamily={font}>TOTAL RISK SCORE</text>
+        {!compact && [{value:0,label:"0"},{value:10,label:"10"},{value:20,label:"20"},{value:35,label:"35"},{value:74,label:"74"}].map(tick => {
+          const point = gaugePoint(180 - (tick.value / maxPossible) * 180, 106);
+          return <text key={tick.value} x={point.x} y={point.y + 14} textAnchor="middle" fill={C.grey[500]} fontSize="9" fontWeight="600" fontFamily={font}>{tick.label}</text>;
+        })}
+      </svg>
+      {!compact && <div style={{display:"flex",justifyContent:"center",gap:8,marginTop:-3,flexWrap:"wrap"}}>
+        {ranges.map(range => <span key={range.label} style={{display:"inline-flex",alignItems:"center",gap:4,fontSize:10,color:C.grey[600]}}><span style={{width:7,height:7,borderRadius:"50%",background:range.color}}/>{range.label}</span>)}
+      </div>}
     </div>
   );
 };
 
-// ── ACOG Risk Score Modal — mirrors TRS drawer exactly ────────────
-const ACOGModal = ({p, onClose}) => {
-  const acog = p._acog;
-  const ac = acog.color; // accent colour for this score
+// ── Maternal Health Risk Score Modal — full Jira AC implementation ──
+const MHRModal = ({p, onClose}) => {
+  const mhr = p._mhr;
+  const ac = mhr.color;
+  const [showTransparency, setShowTransparency] = useState(false);
+  const calcDate = "Oct 2, 2026 · 14:32";
 
-  const riskDesc = {
-    "critical": "Critical risk for severe maternal morbidity. Immediate intervention required.",
-    "high":     "High risk for severe maternal morbidity. Specialist consultation required.",
-    "medium":   "Moderate risk. Enhanced monitoring and iron optimization recommended.",
-    "low":      "Low maternal morbidity risk. Routine prenatal monitoring is sufficient.",
-  }[acog.score>=80?"critical":acog.score>=60?"high":acog.score>=40?"medium":"low"];
-
-  // Recommended actions per risk tier — mirrors TRS actions pattern
-  const actions = acog.score >= 80
-    ? ["Initiate IV iron therapy — Ferric Carboxymaltose STAT","MFM consultation for high-risk monitoring","Type & screen — peripartum transfusion risk elevated","Target Hgb ≥11 g/dL before delivery","CBC recheck in 24–48h"]
-    : acog.score >= 60
-    ? ["IV iron therapy — Ferric Carboxymaltose 750mg within 14 days","MFM consultation recommended","Recheck Hgb + Ferritin in 7–10 days","Target Hgb ≥11 g/dL by 34 weeks gestation"]
-    : acog.score >= 40
+  const actions = mhr.score >= 35
+    ? ["Multidisciplinary planning — MFM, anesthesia, hematology","Blood-bank preparedness — type & crossmatch ≥4 units","Initiate IV iron therapy — Ferric Carboxymaltose STAT","Consider delaying elective procedure if unstable","CBC recheck in 24–48h"]
+    : mhr.score >= 20
+    ? ["Pre-delivery optimization recommended","IV iron therapy — Ferric Carboxymaltose 750mg within 14 days","MFM consultation recommended","Recheck Hgb + Ferritin in 7–10 days","Target Hgb ≥11 g/dL by 34 weeks gestation"]
+    : mhr.score >= 10
     ? ["Enhanced anemia monitoring — CBC every 4 weeks","Consider IV iron if Hgb <11 g/dL","Obstetric follow-up with risk reassessment"]
     : ["Routine prenatal monitoring","Oral iron supplementation if Hgb <11 g/dL","Standard CBC schedule per OB protocol"];
 
-  // Condition breakdown rows — full 12-condition master list
-  const earnedNames = new Set(acog.contribs.map(c=>c.name));
+  // Severity dot color for risk drivers
+  const dotColor = (sev) => sev==="high" ? C.error[400] : sev==="moderate" ? C.orange[400] : "#92600A";
+
+  // Data transparency inputs
+  const transparencyInputs = [
+    ...p.labs.map(l => ({name:l.label, value:`${l.value} ${l.unit||""}`, date:"Apr 9, 2026", source:"Lab (EHR)", used:true})),
+    {name:"PT", value:`${p.mhr.pt??"—"} s`, date:"Apr 9, 2026", source:"Lab (EHR)", used:p.mhr.pt!=null},
+    {name:"INR", value:`${p.mhr.inr??"—"}`, date:"Apr 9, 2026", source:"Lab (EHR)", used:p.mhr.inr!=null},
+    {name:"Fibrinogen", value:`${p.mhr.fibrinogen??"—"} mg/dL`, date:"Apr 9, 2026", source:"Lab (EHR)", used:p.mhr.fibrinogen!=null},
+    {name:"Placental Diagnosis", value: p.mhr.placental||"Not documented", date:"—", source:"Ultrasound", used:p.mhr.placental!=null},
+    {name:"Prior PPH", value: p.mhr.priorPPH===undefined?"Not documented":p.mhr.priorPPH?"Yes":"No", date:"—", source:"OB History", used:p.mhr.priorPPH!==undefined},
+    {name:"Hypertensive Disorder", value: p.mhr.hypertensiveDisorder||"None", date:"—", source:"OB History", used:p.mhr.hypertensiveDisorder!==undefined},
+    {name:"Gestational Diabetes", value: p.mhr.gestationalDiabetes===undefined?"Not documented":p.mhr.gestationalDiabetes?"Yes":"No", date:"—", source:"OB History", used:p.mhr.gestationalDiabetes!==undefined},
+    {name:"Anticoagulation Status", value: p.mhr.anticoagulationStatus||"None", date:"—", source:"Medication List", used:p.mhr.anticoagulationStatus!==undefined},
+  ];
+
+  const DriverRow = ({d}) => (
+    <div style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",borderBottom:"none"}}>
+      <div style={{width:10,height:10,borderRadius:"50%",background:dotColor(d.severity),flexShrink:0,boxShadow:d.severity==="high"?`0 0 4px ${C.error[400]}`:"none"}}/>
+      <div style={{flex:1,minWidth:0}}>
+        <div style={{fontSize:13,fontWeight:600,color:C.grey[800],fontFamily:font}}>{d.label}</div>
+        <div style={{fontSize:11,color:C.grey[500],fontFamily:font,marginTop:1}}>{d.value}</div>
+      </div>
+    </div>
+  );
 
   return (
     <div style={{position:"fixed",inset:0,zIndex:300,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.5)",backdropFilter:"blur(4px)"}} onClick={onClose}>
-      <div style={{width:580,maxHeight:"85vh",background:C.grey[100],borderRadius:16,display:"flex",flexDirection:"column",boxShadow:"0 24px 80px rgba(0,0,0,0.25)",overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
+      <div style={{width:640,maxHeight:"88vh",background:C.grey[100],borderRadius:16,display:"flex",flexDirection:"column",boxShadow:"0 24px 80px rgba(0,0,0,0.25)",overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
 
-        {/* ── Header — mirrors TRS ── */}
+        {/* ── Header ── */}
         <div style={{padding:"16px 20px",borderBottom:`1px solid ${C.grey[300]}`,display:"flex",alignItems:"center",gap:12,flexShrink:0,background:"#fff"}}>
           <div style={{width:36,height:36,borderRadius:10,background:C.grey[200],display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.grey[700]} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -373,89 +432,162 @@ const ACOGModal = ({p, onClose}) => {
             </svg>
           </div>
           <div style={{flex:1}}>
-            <div style={{fontSize:16,fontWeight:700,color:C.grey[800],fontFamily:font,lineHeight:1.2}}>ACOG Risk Score</div>
+            <div style={{fontSize:16,fontWeight:700,color:C.grey[800],fontFamily:font,lineHeight:1.2}}>Maternal Health Risk Score</div>
             <div style={{fontSize:12,color:C.grey[600],fontFamily:font,marginTop:2}}>{p.name} · MRN {p.id}</div>
           </div>
           <button onClick={onClose} style={{width:32,height:32,borderRadius:8,background:C.grey[200],border:"none",color:C.grey[600],fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontFamily:font,lineHeight:1}}>✕</button>
         </div>
 
-        {/* ── Score hero ── */}
-        <div style={{padding:"24px 28px",borderBottom:`1px solid ${C.grey[300]}`,flexShrink:0,background:"#fff"}}>
-          <div style={{display:"flex",alignItems:"center",gap:12}}>
-
-            {/* Total */}
-            <div style={{background:C.grey[200],borderRadius:12,padding:"20px 24px",textAlign:"center",flex:1}}>
-              <div style={{fontSize:48,fontWeight:500,color:ac,fontFamily:font,lineHeight:1,letterSpacing:"-0.03em"}}>{acog.score}</div>
-              <div style={{fontSize:12,fontWeight:600,color:ac,fontFamily:font,marginTop:8}}>Total ACOG Score</div>
+        {/* ── AC1: Risk Summary Card with 0–74 severity gauge ── */}
+        <div style={{padding:"18px 24px 20px",borderBottom:`1px solid ${C.grey[300]}`,flexShrink:0,background:"#fff"}}>
+          <div style={{display:"flex",alignItems:"center",gap:18,flexWrap:"wrap"}}>
+            <MHRGauge score={mhr.score} maxPossible={mhr.maxPossible} color={ac}/>
+            <div style={{flex:1,minWidth:220}}>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+                <SevChip tier={mhr.tier}/>
+                <span style={{fontSize:14,fontWeight:700,color:ac,fontFamily:font}}>{mhr.cat}</span>
+              </div>
+              <p style={{fontSize:13,color:C.grey[700],fontFamily:font,lineHeight:1.5,margin:"0 0 8px"}}>{mhr.interp}</p>
+              <div style={{fontSize:11,color:C.grey[500],fontFamily:font}}>Calculated {calcDate}</div>
             </div>
-
-            <div style={{fontSize:24,color:C.grey[400],fontWeight:400,flexShrink:0}}>=</div>
-
-            {/* Baseline */}
-            <div style={{background:C.grey[200],borderRadius:12,padding:"20px 24px",textAlign:"center",flex:1}}>
-              <div style={{fontSize:32,fontWeight:500,color:"#003E7C",fontFamily:font,lineHeight:1,letterSpacing:"-0.02em"}}>{acog.baseline}</div>
-              <div style={{fontSize:12,fontWeight:600,color:"#003E7C",fontFamily:font,marginTop:8}}>Baseline Risk</div>
-            </div>
-
-            <div style={{fontSize:24,color:C.grey[400],fontWeight:400,flexShrink:0}}>+</div>
-
-            {/* Condition Points */}
-            <div style={{background:C.grey[200],borderRadius:12,padding:"20px 24px",textAlign:"center",flex:1}}>
-              <div style={{fontSize:32,fontWeight:500,color:ac,fontFamily:font,lineHeight:1,letterSpacing:"-0.02em"}}>{acog.condPts}</div>
-              <div style={{fontSize:12,fontWeight:600,color:ac,fontFamily:font,marginTop:8}}>Condition Points</div>
-            </div>
-
+          </div>
+          {/* Domain summary bar */}
+          <div style={{display:"flex",gap:4,marginTop:14}}>
+            {mhr.domains.map(d => (
+              <div key={d.id} style={{flex:1,display:"flex",flexDirection:"column",gap:2}}>
+                <div style={{height:6,background:C.grey[300],borderRadius:3,overflow:"hidden"}}>
+                  <div style={{height:"100%",width:`${d.cap>0?Math.min(d.clamped/d.cap*100,100):0}%`,background:d.clamped>0?ac:C.grey[400],borderRadius:3,transition:"width 0.4s ease"}}/>
+                </div>
+                <span style={{fontSize:9,fontWeight:600,color:C.grey[600],fontFamily:font,textAlign:"center"}}>{d.clamped}/{d.cap}</span>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* ── Scrollable body — mirrors TRS body exactly ── */}
-        <div style={{flex:1,overflowY:"auto",padding:"16px 20px",display:"flex",flexDirection:"column",gap:12,background:"#fff"}}>
+        {/* ── AC7: Missing Data Banner ── */}
+        {mhr.missing.length > 0 && (
+          <div style={{padding:"10px 20px",background:C.yellow[100],borderBottom:`1px solid ${C.grey[300]}`,flexShrink:0,display:"flex",alignItems:"flex-start",gap:8}}>
+            <span style={{fontSize:14,flexShrink:0,marginTop:1}}>⚠️</span>
+            <div style={{flex:1}}>
+              <div style={{fontSize:12,fontWeight:700,color:"#92600A",fontFamily:font,marginBottom:2}}>Missing Input Data</div>
+              <div style={{fontSize:12,color:C.grey[700],fontFamily:font,lineHeight:1.5}}>
+                {mhr.missing.join(", ")} — {mhr.calcComplete ? "Complete risk calculation performed." : "Risk calculation may be incomplete due to missing inputs. Results should be interpreted with caution."}
+              </div>
+            </div>
+          </div>
+        )}
 
-          {/* Condition Breakdown — same bordered list as TRS Score Breakdown */}
+        {/* ── Scrollable body ── */}
+        <div style={{flex:1,overflowY:"auto",padding:"16px 20px",display:"flex",flexDirection:"column",gap:14,background:"#fff"}}>
+
+          {/* ── AC3: Risk Drivers Panel — Modifiable vs Non-Modifiable ── */}
           <div>
-            <div style={{fontSize:12,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",color:C.grey[600],fontFamily:font,marginBottom:8}}>Condition Contributions</div>
-            <div style={{background:"#fff",borderRadius:10,overflow:"hidden",border:`1px solid ${C.grey[300]}`}}>
-              {ACOG_CONDITIONS.map((cond, i) => {
-                const earned = earnedNames.has(cond.name);
-                const pts = earned ? cond.pts : 0;
-                return (
-                  <div key={i} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",borderBottom:i<ACOG_CONDITIONS.length-1?`1px solid ${C.grey[300]}`:"none",background:earned?"#fff":C.grey[200]}}>
-                    <ConditionIcon name={cond.name} size={18}/>
-                    <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontSize:14,fontWeight:earned?600:400,color:earned?C.grey[800]:C.grey[500],fontFamily:font}}>{cond.name}</div>
-                      <div style={{fontSize:12,color:C.grey[500],fontFamily:font,marginTop:1}}>ICD-10: {cond.icd}</div>
-                    </div>
-                    <div style={{flexShrink:0,textAlign:"right"}}>
-                      <span style={{fontSize:14,fontWeight:700,color:earned?ac:C.grey[400],fontFamily:font}}>{earned?`+${pts}`:"+0"}</span>
-                      <span style={{fontSize:12,color:C.grey[400],fontFamily:font,marginLeft:2}}>/{cond.pts}</span>
-                    </div>
-                  </div>
-                );
-              })}
+            <div style={{fontSize:12,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",color:C.grey[600],fontFamily:font,marginBottom:8}}>Risk Drivers</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+              {/* Potentially Modifiable */}
+              <div style={{border:`1px solid ${C.grey[300]}`,borderRadius:10,overflow:"hidden"}}>
+                <div style={{padding:"8px 12px",background:C.grey[200],borderBottom:`1px solid ${C.grey[300]}`,display:"flex",alignItems:"center",gap:6}}>
+                  <span style={{fontSize:13}}>🔄</span>
+                  <span style={{fontSize:12,fontWeight:700,color:C.grey[700],fontFamily:font}}>Potentially Modifiable</span>
+                  <span style={{fontSize:11,color:C.grey[500],fontFamily:font,marginLeft:"auto"}}>{mhr.modifiableDrivers.length}</span>
+                </div>
+                {mhr.modifiableDrivers.length===0
+                  ? <div style={{padding:"10px 12px",fontSize:12,color:C.grey[500],fontFamily:font}}>No modifiable drivers identified</div>
+                  : mhr.modifiableDrivers.map((d,i) => <DriverRow key={i} d={d}/>)}
+              </div>
+              {/* Obstetric / Non-Modifiable */}
+              <div style={{border:`1px solid ${C.grey[300]}`,borderRadius:10,overflow:"hidden"}}>
+                <div style={{padding:"8px 12px",background:C.grey[200],borderBottom:`1px solid ${C.grey[300]}`,display:"flex",alignItems:"center",gap:6}}>
+                  <span style={{fontSize:13}}>📋</span>
+                  <span style={{fontSize:12,fontWeight:700,color:C.grey[700],fontFamily:font}}>Obstetric / Non-Modifiable</span>
+                  <span style={{fontSize:11,color:C.grey[500],fontFamily:font,marginLeft:"auto"}}>{mhr.nonModifiableDrivers.length}</span>
+                </div>
+                {mhr.nonModifiableDrivers.length===0
+                  ? <div style={{padding:"10px 12px",fontSize:12,color:C.grey[500],fontFamily:font}}>No non-modifiable drivers identified</div>
+                  : mhr.nonModifiableDrivers.map((d,i) => <DriverRow key={i} d={d}/>)}
+              </div>
             </div>
           </div>
 
-          {/* Clinical Recommendations — Image 4 */}
+          {/* ── AC4: Recommended Preparation Card ── */}
           <div style={{background:"#fff",border:`1px solid ${C.grey[300]}`,borderRadius:10,padding:"14px 16px"}}>
             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
               <span style={{fontSize:16}}>🎯</span>
-              <span style={{fontSize:14,fontWeight:700,color:C.grey[800],fontFamily:font}}>Clinical Recommendations</span>
+              <span style={{fontSize:14,fontWeight:700,color:C.grey[800],fontFamily:font}}>Recommended Preparation</span>
             </div>
-            <div style={{fontSize:14,color:C.grey[700],fontFamily:font,lineHeight:1.6,marginBottom:14}}>
-              Based on ACOG Practice Bulletin #233 and the patient's risk profile, immediate intervention is recommended to prevent severe maternal morbidity.
-            </div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-              <div style={{background:C.grey[200],borderRadius:8,padding:"10px 12px"}}>
-                <div style={{fontSize:10,fontWeight:600,color:C.grey[500],fontFamily:font,marginBottom:4}}>Recommended Order</div>
-                <div style={{fontSize:14,fontWeight:600,color:C.grey[800],fontFamily:font}}>{p.order}</div>
-              </div>
-              <div style={{background:C.grey[200],borderRadius:8,padding:"10px 12px"}}>
-                <div style={{fontSize:10,fontWeight:600,color:C.grey[500],fontFamily:font,marginBottom:4}}>Expected Outcome</div>
-                <div style={{fontSize:14,fontWeight:700,color:C.success[400],fontFamily:font}}>60–70% SMM reduction</div>
-              </div>
+            <div style={{display:"flex",flexDirection:"column",gap:6}}>
+              {actions.map((a,i) => (
+                <div key={i} style={{display:"flex",gap:8,alignItems:"flex-start",fontSize:13,color:C.grey[700],fontFamily:font,lineHeight:1.5}}>
+                  <span style={{color:ac,flexShrink:0,marginTop:1,fontWeight:700}}>•</span>{a}
+                </div>
+              ))}
             </div>
           </div>
 
+          {/* ── AC5: Data Transparency Drawer ── */}
+          <div style={{border:`1px solid ${C.grey[300]}`,borderRadius:10,overflow:"hidden"}}>
+            <button onClick={()=>setShowTransparency(s=>!s)} style={{width:"100%",padding:"10px 14px",background:C.grey[200],border:"none",display:"flex",alignItems:"center",gap:8,cursor:"pointer",fontFamily:font}}>
+              <span style={{fontSize:13}}>📊</span>
+              <span style={{fontSize:13,fontWeight:700,color:C.grey[700],fontFamily:font,flex:1,textAlign:"left"}}>Data Transparency</span>
+              <span style={{fontSize:11,color:C.grey[500],fontFamily:font,marginRight:6}}>{transparencyInputs.filter(t=>t.used).length} of {transparencyInputs.length} inputs used</span>
+              <span style={{fontSize:12,color:C.grey[500]}}>{showTransparency ? "▲" : "▼"}</span>
+            </button>
+            {showTransparency && (
+              <div style={{overflowY:"auto",maxHeight:280}}>
+                {transparencyInputs.map((inp,i) => (
+                  <div key={i} style={{display:"grid",gridTemplateColumns:"1.3fr 1fr 0.8fr 0.8fr 0.5fr",gap:8,padding:"7px 14px",borderBottom:i<transparencyInputs.length-1?`1px solid ${C.grey[300]}`:"none",alignItems:"center",background:inp.used?"#fff":C.yellow[100]}}>
+                    <span style={{fontSize:12,fontWeight:600,color:C.grey[800],fontFamily:font}}>{inp.name}</span>
+                    <span style={{fontSize:12,color:C.grey[700],fontFamily:font}}>{inp.value}</span>
+                    <span style={{fontSize:11,color:C.grey[500],fontFamily:font}}>{inp.date}</span>
+                    <span style={{fontSize:11,color:C.grey[500],fontFamily:font}}>{inp.source}</span>
+                    <span style={{fontSize:11,fontWeight:700,color:inp.used?C.success[400]:C.orange[400],fontFamily:font,textAlign:"right"}}>{inp.used?"Used":"Missing"}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* ── Domain breakdowns (collapsible detail) ── */}
+          {mhr.domains.map((dom,di) => (
+            <div key={dom.id}>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+                <span style={{fontSize:14}}>{MHR_DOMAINS[di].icon}</span>
+                <span style={{fontSize:13,fontWeight:700,color:C.grey[800],fontFamily:font,flex:1}}>{dom.name}</span>
+                <span style={{fontSize:14,fontWeight:700,color:dom.clamped>0?ac:C.grey[400],fontFamily:font}}>{dom.clamped}</span>
+                <span style={{fontSize:12,color:C.grey[400],fontFamily:font}}>/{dom.cap}</span>
+              </div>
+              <div style={{background:"#fff",borderRadius:10,overflow:"hidden",border:`1px solid ${C.grey[300]}`}}>
+                {dom.factors.map((f,i) => {
+                  const earned = f.points > 0;
+                  return (
+                    <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",borderBottom:i<dom.factors.length-1?`1px solid ${C.grey[300]}`:"none",background:earned?"#fff":C.grey[200]}}>
+                      <div style={{width:18,height:18,borderRadius:6,background:earned?ac:C.grey[300],display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                        <span style={{fontSize:10,fontWeight:700,color:"#fff"}}>{earned?"✓":"–"}</span>
+                      </div>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:13,fontWeight:earned?600:400,color:earned?C.grey[800]:C.grey[500],fontFamily:font}}>{f.label}</div>
+                        <div style={{fontSize:11,color:C.grey[500],fontFamily:font,marginTop:1}}>{f.value} · {f.criteria}{f.icd?` · ICD-10: ${f.icd}`:""}</div>
+                      </div>
+                      <div style={{flexShrink:0,textAlign:"right"}}>
+                        <span style={{fontSize:13,fontWeight:700,color:earned?ac:C.grey[400],fontFamily:font}}>{earned?`+${f.points}`:"+0"}</span>
+                        <span style={{fontSize:11,color:C.grey[400],fontFamily:font,marginLeft:2}}>/{f.max}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {dom.raw > dom.cap && (
+                <div style={{fontSize:11,color:C.orange[400],fontFamily:font,marginTop:4,fontStyle:"italic"}}>Raw sum {dom.raw} clamped to cap {dom.cap}</div>
+              )}
+            </div>
+          ))}
+
+        </div>
+
+        {/* ── AC9: Clinical Safety Disclaimer (persistent, non-dismissible) ── */}
+        <div style={{padding:"10px 20px",background:C.grey[200],borderTop:`1px solid ${C.grey[300]}`,flexShrink:0,display:"flex",alignItems:"center",gap:8}}>
+          <span style={{fontSize:12,color:C.grey[600],flexShrink:0}}>ℹ️</span>
+          <span style={{fontSize:11,color:C.grey[600],fontFamily:font,lineHeight:1.4}}>This assessment supports but does not replace clinical judgment. All clinical decisions should be made by the treating provider.</span>
         </div>
       </div>
     </div>
@@ -464,6 +596,7 @@ const ACOGModal = ({p, onClose}) => {
 
 // ── Overview Zone (identical structure to BloodHealth, OB data) ────
 const OverviewZone = ({p, onNavigate}) => {
+  const [mhrOpen, setMhrOpen] = useState(false);
   const hgbLab = p.labs[0];
   const draws = hgbLab.draws||[]; const hasDelta = draws.length>=2;
   const currentHgb = parseFloat(hgbLab.value);
@@ -472,7 +605,7 @@ const OverviewZone = ({p, onNavigate}) => {
   const isDown = hasDelta && draws[draws.length-1].value < draws[0].value;
   const deltaHbPct = hasDelta&&isDown ? Math.round(((baselineHgb-currentHgb)/baselineHgb)*100) : null;
   const isDeltaRisk = deltaHbPct!==null && deltaHbPct>=50;
-  const trs = p._trs; const tc = TRC[trs.trsSev]; const acog = p._acog;
+  const mhr = p._mhr;
   const hgbColor = getAnemiaGrade(currentHgb).color;
   const ferColor = p.labs[1].status==="critical"?C.error[400]:p.labs[1].status==="high"||p.labs[1].status==="borderline"?C.orange[400]:C.grey[600];
   const protocol = p.severity==="Critical"?"Urgent: IV Iron + MFM Consultation":p.severity==="High"?"IV Iron Therapy Protocol – ACOG PB #233":"Monitoring + IV Iron Supplementation";
@@ -490,37 +623,49 @@ const OverviewZone = ({p, onNavigate}) => {
           <span style={{fontSize:14}}>⚠️</span>
           <span style={{fontSize:14,fontWeight:700,color:C.grey[800],fontFamily:font}}>Risk Assessment</span>
         </div>
-        {/* Six value columns: HGB · Ferritin · ACOG · TRS · EDD · Active Order */}
+        {/* Six value columns: HGB · Ferritin · BP · Maternal Health · EDD · Active Order */}
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr 1fr 1.4fr",borderBottom:`1px solid ${C.grey[200]}`}}>
           <div style={{padding:"14px 18px",borderRight:`1px solid ${C.grey[200]}`}}>
             <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",color:C.grey[500],fontFamily:font,marginBottom:6}}>HGB</div>
             <div style={{display:"flex",alignItems:"baseline",gap:3,marginBottom:4}}>
-              <span style={{fontSize:32,fontWeight:500,color:hgbColor,fontFamily:font,lineHeight:1,letterSpacing:"-0.02em"}}>{hgbLab.value}</span>
+              <span style={{fontSize:32,fontWeight:700,color:hgbColor,fontFamily:font,lineHeight:1,letterSpacing:"-0.02em"}}>{hgbLab.value}</span>
               <span style={{fontSize:12,color:C.grey[500],fontFamily:font}}>g/dL</span>
             </div>
             {hasDelta && <div style={{display:"inline-flex",alignItems:"center",gap:3,background:isDown?C.error[100]:C.success[100],borderRadius:4,padding:"2px 7px",marginBottom:4}}>
               <span style={{fontSize:12,fontWeight:700,color:isDown?C.error[400]:C.success[400]}}>{isDown?"↓":"↑"}</span>
               <span style={{fontSize:12,fontWeight:600,color:isDown?C.error[400]:C.success[400],fontFamily:font}}>{delta} g/dL</span>
             </div>}
-            <div><SevChip tier={getAnemiaGrade(hgbLab.value).tier}/></div>
           </div>
           <div style={{padding:"14px 18px",borderRight:`1px solid ${C.grey[200]}`}}>
             <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",color:C.grey[500],fontFamily:font,marginBottom:6}}>Ferritin</div>
-            <div style={{display:"flex",alignItems:"baseline",gap:3,marginBottom:4}}>
-              <span style={{fontSize:32,fontWeight:500,color:ferColor,fontFamily:font,lineHeight:1,letterSpacing:"-0.02em"}}>{p.labs[1].value}</span>
+            <div style={{display:"flex",alignItems:"baseline",gap:3}}>
+              <span style={{fontSize:32,fontWeight:700,color:ferColor,fontFamily:font,lineHeight:1,letterSpacing:"-0.02em"}}>{p.labs[1].value}</span>
               <span style={{fontSize:12,color:C.grey[500],fontFamily:font}}>ng/mL</span>
             </div>
-            <StatusChip status={p.labs[1].status}/>
           </div>
           <div style={{padding:"14px 18px",borderRight:`1px solid ${C.grey[200]}`}}>
-            <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",color:C.grey[500],fontFamily:font,marginBottom:6}}>ACOG Score</div>
-            <div style={{fontSize:32,fontWeight:500,color:acog.color,fontFamily:font,lineHeight:1,marginBottom:4,letterSpacing:"-0.02em"}}>{acog.score}</div>
-            <SevChip tier={acogTier(acog.cat)}/>
+            <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",color:C.grey[500],fontFamily:font,marginBottom:6}}>Blood Pressure</div>
+            {(() => {
+              const [s,d] = p.bp.split("/").map(Number);
+              const elevated = s>=140||d>=90;
+              const bpColor = elevated ? C.error[400] : s>=130||d>=80 ? C.orange[400] : C.success[400];
+              return (
+                <div style={{display:"flex",alignItems:"baseline",gap:3}}>
+                  <span style={{fontSize:32,fontWeight:700,color:bpColor,fontFamily:font,lineHeight:1,letterSpacing:"-0.02em"}}>{p.bp}</span>
+                  <span style={{fontSize:12,color:C.grey[500],fontFamily:font}}>mmHg</span>
+                </div>
+              );
+            })()}
           </div>
           <div style={{padding:"14px 18px",borderRight:`1px solid ${C.grey[200]}`}}>
-            <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",color:C.grey[500],fontFamily:font,marginBottom:4}}>TRS</div>
-            <TRSGauge value={trs.score} color={tc} size={64}/>
-            <div style={{marginTop:4}}><SevChip tier={trsTier(trs.trsSev)}/></div>
+            <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",color:C.grey[500],fontFamily:font,marginBottom:6}}>Maternal Health Score</div>
+            <div onClick={()=>setMhrOpen(true)} style={{cursor:"pointer"}} title={mhr.cat}>
+              <MHRGauge score={mhr.score} maxPossible={mhr.maxPossible} color={mhr.color} compact/>
+            </div>
+          </div>
+          <div style={{padding:"14px 18px",borderRight:`1px solid ${C.grey[200]}`}}>
+            <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",color:C.grey[500],fontFamily:font,marginBottom:6}}>Visit Date</div>
+            <div style={{fontSize:18,fontWeight:600,color:C.grey[800],fontFamily:font,lineHeight:1.3}}>{p.followUpDate}</div>
           </div>
           <div style={{padding:"14px 18px",borderRight:`1px solid ${C.grey[200]}`}}>
             <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",color:C.grey[500],fontFamily:font,marginBottom:6}}>EDD</div>
@@ -529,7 +674,7 @@ const OverviewZone = ({p, onNavigate}) => {
           <div style={{padding:"14px 18px"}}>
             <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",color:C.grey[500],fontFamily:font,marginBottom:6}}>Active Order</div>
             {p.carePlanStatus==="pending"
-              ? <div style={{display:"flex",alignItems:"center",gap:4}}><div style={{width:5,height:5,borderRadius:"50%",background:C.error[400],flexShrink:0}}/><span style={{fontSize:12,color:C.error[400],fontFamily:font,fontWeight:600}}>CR Not Started</span></div>
+              ? <div style={{display:"flex",alignItems:"center",gap:4}}><div style={{width:5,height:5,borderRadius:"50%",background:C.error[400],flexShrink:0}}/><span style={{fontSize:14,color:C.error[400],fontFamily:font,fontWeight:600}}>Care Recommendation Not Started</span></div>
               : <div style={{fontSize:14,fontWeight:600,color:C.grey[800],fontFamily:font,lineHeight:1.5}}>{p.order}</div>}
           </div>
         </div>
@@ -592,6 +737,7 @@ const OverviewZone = ({p, onNavigate}) => {
           ))}
         </div>
       </div>
+      {mhrOpen && <MHRModal p={p} onClose={()=>setMhrOpen(false)}/>}
     </div>
   );
 };
@@ -607,12 +753,15 @@ const AISummaryZone = ({p}) => {
   };
   const initMsgs = [
     {role:"user", text:"Generate the initial ACOG risk assessment for this patient."},
-    {role:"ai", text:`🗒️ ACOG RISK ASSESSMENT SUMMARY
+    {role:"ai", text:`🗒️ MATERNAL HEALTH RISK ASSESSMENT SUMMARY
 
 **Obstetric Patient**: Hgb ${p.labs[0].value} g/dL during pregnancy
-**Risk Category**: ${p._acog.score>=80?"CRITICAL RISK":"HIGH RISK"} for Severe Maternal Morbidity
+**Risk Category**: ${p._mhr.score>=35?"VERY HIGH RISK":p._mhr.score>=20?"HIGH RISK":p._mhr.score>=10?"INTERMEDIATE RISK":"LOW RISK"} — ${p._mhr.cat}
+**Total Score**: ${p._mhr.score} of ${p._mhr.maxPossible} (${p._mhr.activeDomains} of 6 domains active)
 
-🔑 KEY CONCERNS PER ACOG GUIDELINES
+${p._mhr.interp}
+
+🔑 DOMAIN BREAKDOWN
 
 **ACOG Practice Bulletin #233 (2021) - Anemia in Pregnancy:**
 • Anemia defined as Hgb <11 g/dL in 1st/3rd trimester, <10.5 g/dL in 2nd trimester
@@ -1005,7 +1154,7 @@ const CarePlanZone = ({p}) => {
             {[
               {num:"1. Medication Order", title:s==="Critical"?"IV Iron — Ferric Carboxymaltose 1000mg STAT":"IV Iron — Ferric Carboxymaltose 750mg × 2", detail:drug},
               {num:"2. Monitoring",       title:"Lab Monitoring", detail:"CBC at 2–4 weeks, Ferritin at 6 weeks, Target Hgb >11 g/dL by 34 weeks"},
-              {num:"3. Specialist",       title:s==="Critical"?"MFM Consultation — STAT":"MFM Consultation — within 2 weeks", detail:`ACOG risk score ${p._acog.score} — ${p._acog.cat}`},
+              {num:"3. Specialist",       title:s==="Critical"?"MFM Consultation — STAT":"MFM Consultation — within 2 weeks", detail:`Maternal Health Risk Score ${p._mhr.score} — ${p._mhr.cat}`},
             ].map(({num,title,detail},i,arr) => (
               <div key={num} style={{display:"flex",borderBottom:i<arr.length-1?`1px solid ${C.grey[300]}`:"none"}}>
                 <div style={{width:3,background:C.primary[500],flexShrink:0}}/>
@@ -1165,14 +1314,17 @@ const PatientHeader = ({p, onOpenIQ}) => {
       <div style={{flex:1,minWidth:0}}>
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:5}}>
           <span style={{fontSize:18,fontWeight:700,color:C.grey[800],fontFamily:font}}>{p.name}</span>
-          <SevChip tier={getAnemiaGrade(p.labs[0].value).tier}/>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:4,marginBottom:0,flexWrap:"wrap"}}>
           <Stethoscope size={11} color={C.grey[500]}/><span style={{fontSize:12,fontWeight:600,color:C.grey[700],fontFamily:font}}>{p.provider}</span>
           <span style={{fontSize:12,color:C.grey[400],margin:"0 2px"}}>·</span>
           <Hash size={11} color={C.grey[500]}/><span style={{fontSize:12,color:C.grey[700],fontFamily:font}}>MRN {p.id}</span>
           <span style={{fontSize:12,color:C.grey[400],margin:"0 2px"}}>·</span>
-          <User size={11} color={C.grey[500]}/><span style={{fontSize:12,color:C.grey[700],fontFamily:font}}>Age {p.age} · {p.sex}</span>
+          <User size={11} color={C.grey[500]}/><span style={{fontSize:12,color:C.grey[700],fontFamily:font}}>Age {p.age}</span>
+          <span style={{fontSize:12,color:C.grey[400],margin:"0 2px"}}>·</span>
+          <span style={{fontSize:12,fontWeight:700,color:C.grey[700],fontFamily:font}}>Visit Date</span><span style={{fontSize:12,color:C.grey[700],fontFamily:font,marginLeft:3}}>{p.followUpDate}</span>
+          <span style={{fontSize:12,color:C.grey[400],margin:"0 2px"}}>·</span>
+          <span style={{fontSize:12,fontWeight:700,color:C.grey[700],fontFamily:font}}>EDD</span><span style={{fontSize:12,color:C.grey[700],fontFamily:font,marginLeft:3}}>{p.edd}</span>
           <span style={{fontSize:12,color:C.grey[400],margin:"0 2px"}}>·</span>
           <span style={{fontSize:12,color:C.grey[500],fontFamily:font}}>Obstetric History</span><span style={{fontSize:12,fontWeight:600,color:C.grey[700],fontFamily:font,marginLeft:3}}>{p.parity}</span>
         </div>
@@ -1224,7 +1376,7 @@ const MiniWorklist = ({patients,activeId,onSelect,onBack}) => (
               <span style={{fontSize:10,fontWeight:600,color:C.grey[700],background:C.grey[200],border:`1px solid ${C.grey[300]}`,borderRadius:4,padding:"1px 6px",fontFamily:font}}>{p.gestAge.replace(" wks","W")}</span>
               <span style={{fontSize:10,fontWeight:600,color:C.grey[700],background:C.grey[200],border:`1px solid ${C.grey[300]}`,borderRadius:4,padding:"1px 6px",fontFamily:font}}>{p.caseType}</span>
             </div>
-            <div style={{display:"flex",alignItems:"center",gap:4}}><div style={{width:5,height:5,borderRadius:"50%",background:cpC,flexShrink:0}}/><span style={{fontSize:10,color:cpC,fontFamily:font,fontWeight:600}}>{p.carePlanStatus==="generated"?"CR Generated":p.carePlanStatus==="in-progress"?"CR In Progress":"CR Not Started"}</span></div>
+            <div style={{display:"flex",alignItems:"center",gap:4}}><div style={{width:5,height:5,borderRadius:"50%",background:cpC,flexShrink:0}}/><span style={{fontSize:14,color:cpC,fontFamily:font,fontWeight:600}}>{p.carePlanStatus==="generated"?"Care Recommendation Generated":p.carePlanStatus==="in-progress"?"Care Recommendation In Progress":"Care Recommendation Not Started"}</span></div>
           </div>
         );
       })}
@@ -1275,8 +1427,6 @@ const PatientWorkspace = ({patient,allPatients,onBack,onSelectPatient,defaultZon
 
 // ── Worklist Row (same columns as BloodHealth, OB data) ───────────
 const PatientRow = ({p, onOpen, onOpenACOG}) => {
-  const [trsOpen, setTrsOpen] = useState(false);
-  const tc = TRC[p._trs.trsSev];
   const ferC = p.labs[1].status==="critical"?C.error[400]:p.labs[1].status==="high"||p.labs[1].status==="borderline"?C.orange[400]:C.grey[600];
   return (
     <>
@@ -1285,7 +1435,9 @@ const PatientRow = ({p, onOpen, onOpenACOG}) => {
         {/* PATIENT */}
         <td style={{padding:"12px 16px",minWidth:190}}>
           <span style={{fontSize:14,fontWeight:600,color:C.grey[800],fontFamily:font,display:"block",marginBottom:2}}>{p.name}</span>
-          <span style={{fontSize:12,color:C.grey[500],fontFamily:font,display:"block",marginBottom:5}}>MRN {p.id} · Age {p.age}</span>
+          <span style={{fontSize:12,color:C.grey[500],fontFamily:font,display:"block",marginBottom:3}}>MRN {p.id} · Age {p.age}</span>
+          <span style={{fontSize:12,color:C.grey[700],fontFamily:font,display:"block",marginBottom:2}}><strong style={{fontWeight:700}}>Visit Date</strong> {p.followUpDate}</span>
+          <span style={{fontSize:12,color:C.grey[700],fontFamily:font,display:"block",marginBottom:5}}><strong style={{fontWeight:700}}>EDD</strong> {p.edd}</span>
           <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
             <span style={{fontSize:10,fontWeight:600,color:C.grey[700],background:C.grey[200],border:`1px solid ${C.grey[300]}`,borderRadius:4,padding:"2px 6px",fontFamily:font}}>{p.parity}</span>
             <span style={{fontSize:10,fontWeight:600,color:C.grey[700],background:C.grey[200],border:`1px solid ${C.grey[300]}`,borderRadius:4,padding:"2px 6px",fontFamily:font}}>{p.gestAge.replace(" wks","W")}</span>
@@ -1293,72 +1445,55 @@ const PatientRow = ({p, onOpen, onOpenACOG}) => {
           </div>
         </td>
 
-        {/* EDD */}
-        <td style={{padding:"12px 16px",minWidth:110}}>
-          <span style={{fontSize:14,fontWeight:600,color:C.grey[800],fontFamily:font}}>{p.edd}</span>
-        </td>
-
         {/* LAB VALUES */}
         <td style={{padding:"12px 16px",minWidth:190}}>
           <div style={{display:"flex",gap:14}}>
             <div>
               <div style={{fontSize:12,fontWeight:700,color:C.grey[600],textTransform:"uppercase",letterSpacing:"0.06em",fontFamily:font,marginBottom:3}}>HGB</div>
-              <div style={{display:"flex",alignItems:"baseline",gap:2,marginBottom:4}}><span style={{fontSize:20,fontWeight:500,color:getAnemiaGrade(p.labs[0].value).color,fontFamily:font,letterSpacing:"-0.01em"}}>{p.labs[0].value}</span><span style={{fontSize:12,color:C.grey[500],fontFamily:font}}>g/dL</span></div>
-              <SevChip tier={getAnemiaGrade(p.labs[0].value).tier}/>
+              <div style={{display:"flex",alignItems:"baseline",gap:2}}><span style={{fontSize:20,fontWeight:700,color:getAnemiaGrade(p.labs[0].value).color,fontFamily:font,letterSpacing:"-0.01em"}}>{p.labs[0].value}</span><span style={{fontSize:12,color:C.grey[500],fontFamily:font}}>g/dL</span></div>
             </div>
             <div style={{width:"0.5px",background:C.grey[300],alignSelf:"stretch"}}/>
             <div>
               <div style={{fontSize:12,fontWeight:700,color:C.grey[600],textTransform:"uppercase",letterSpacing:"0.06em",fontFamily:font,marginBottom:3}}>Ferritin</div>
-              <div style={{display:"flex",alignItems:"baseline",gap:2,marginBottom:4}}><span style={{fontSize:20,fontWeight:500,color:ferC,fontFamily:font,letterSpacing:"-0.01em"}}>{p.labs[1].value}</span><span style={{fontSize:12,color:C.grey[500],fontFamily:font}}>ng/mL</span></div>
-              <StatusChip status={p.labs[1].status}/>
+              <div style={{display:"flex",alignItems:"baseline",gap:2}}><span style={{fontSize:20,fontWeight:700,color:ferC,fontFamily:font,letterSpacing:"-0.01em"}}>{p.labs[1].value}</span><span style={{fontSize:12,color:C.grey[500],fontFamily:font}}>ng/mL</span></div>
             </div>
           </div>
         </td>
 
-        {/* TRS */}
-        <td style={{padding:"12px 16px",minWidth:95}} onClick={e=>{e.stopPropagation();setTrsOpen(v=>!v);}}>
-          <div style={{cursor:"pointer",display:"inline-block"}}>
-            <TRSGauge value={p._trs.score} color={tc} size={52}/>
-            <div style={{marginTop:3}}><SevChip tier={trsTier(p._trs.trsSev)}/></div>
-          </div>
+        {/* BLOOD PRESSURE */}
+        <td style={{padding:"12px 16px",minWidth:120}}>
+          {(() => {
+            const [s,d] = p.bp.split("/").map(Number);
+            const elevated = s>=140||d>=90;
+            const color = elevated ? C.error[400] : s>=130||d>=80 ? C.orange[400] : C.success[400];
+            return (
+              <div>
+                <div style={{fontSize:12,fontWeight:700,color:C.grey[600],textTransform:"uppercase",letterSpacing:"0.06em",fontFamily:font,marginBottom:3}}>BP</div>
+                <div style={{display:"flex",alignItems:"baseline",gap:2}}><span style={{fontSize:20,fontWeight:700,color,fontFamily:font,letterSpacing:"-0.01em"}}>{p.bp}</span><span style={{fontSize:12,color:C.grey[500],fontFamily:font}}>mmHg</span></div>
+              </div>
+            );
+          })()}
         </td>
 
-        {/* ACOG RISK SCORE */}
-        <td style={{padding:"12px 16px",minWidth:110}} onClick={e=>{e.stopPropagation();onOpenACOG(p);}}>
-          <div style={{cursor:"pointer",display:"inline-block"}}>
-            <div style={{display:"flex",alignItems:"baseline",gap:2,marginBottom:4}}>
-              <span style={{fontSize:20,fontWeight:500,color:p._acog.color,fontFamily:font,letterSpacing:"-0.01em"}}>{p._acog.score}</span>
-              <span style={{fontSize:12,color:C.grey[500],fontFamily:font}}>/100</span>
-            </div>
-            <SevChip tier={acogTier(p._acog.cat)}/>
-            <div style={{fontSize:10,color:C.grey[600],fontFamily:font,marginTop:4,fontWeight:500}}>{p._acog.contribs.length} factor{p._acog.contribs.length!==1?"s":""}</div>
+        {/* MATERNAL HEALTH RISK SCORE — AC6: tier-colored chip with hover tooltip */}
+        <td style={{padding:"12px 16px",minWidth:110,textAlign:"center"}} onClick={e=>{e.stopPropagation();onOpenACOG(p);}}>
+          <div style={{cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",position:"relative"}} title={p._mhr.cat}>
+            <MHRGauge score={p._mhr.score} maxPossible={p._mhr.maxPossible} color={p._mhr.color} compact/>
           </div>
         </td>
 
         {/* ACTIVE ORDER */}
         <td style={{padding:"12px 16px",minWidth:180}}>
-          {(() => {const cpC=p.carePlanStatus==="generated"?C.success[400]:p.carePlanStatus==="in-progress"?C.orange[400]:p.carePlanStatus==="pending"?C.error[400]:C.grey[400];const cpL=p.carePlanStatus==="generated"?"CR Generated":p.carePlanStatus==="in-progress"?"CR In Progress":p.carePlanStatus==="pending"?"CR Not Started":"";return cpL? <div style={{display:"flex",alignItems:"center",gap:4,marginBottom:4}}><div style={{width:5,height:5,borderRadius:"50%",background:cpC,flexShrink:0}}/><span style={{fontSize:10,color:cpC,fontFamily:font,fontWeight:600}}>{cpL}</span></div>:null;})()}
+          {(() => {const cpC=p.carePlanStatus==="generated"?C.success[400]:p.carePlanStatus==="in-progress"?C.orange[400]:p.carePlanStatus==="pending"?C.error[400]:C.grey[400];const cpL=p.carePlanStatus==="generated"?"Care Recommendation Generated":p.carePlanStatus==="in-progress"?"Care Recommendation In Progress":p.carePlanStatus==="pending"?"Care Recommendation Not Started":"";return cpL? <div style={{display:"flex",alignItems:"center",gap:4,marginBottom:4}}><div style={{width:5,height:5,borderRadius:"50%",background:cpC,flexShrink:0}}/><span style={{fontSize:14,color:cpC,fontFamily:font,fontWeight:600}}>{cpL}</span></div>:null;})()}
           {p.carePlanStatus!=="pending" && <span style={{fontSize:12,color:C.grey[700],fontFamily:font,lineHeight:1.4}}>{p.order}</span>}
         </td>
 
         {/* PROVIDER */}
         <td style={{padding:"12px 16px",minWidth:120}}>
           <div style={{fontSize:14,fontWeight:600,color:C.grey[800],fontFamily:font}}>{p.provider}</div>
-          <div style={{fontSize:12,color:C.grey[500],fontFamily:font,marginTop:2}}>{p.providerRole}</div>
         </td>
 
-        {/* ANEMIA SEVERITY */}
-        <td style={{padding:"12px 16px",minWidth:110}}>{(()=>{
-          const ag = getAnemiaGrade(p.labs[0].value);
-          return <div><SevChip tier={ag.tier}/></div>;
-        })()}</td>
-
-        {/* ACTIONS */}
-        <td style={{padding:"12px 16px",minWidth:150}} onClick={e=>e.stopPropagation()}>
-          <button onClick={()=>onOpen(p,"cp")} style={{background:C.orange[400],color:"#fff",border:"none",borderRadius:6,padding:"6px 12px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:font,display:"flex",alignItems:"center",gap:4,whiteSpace:"nowrap"}}>Review Optimization Recommendations <ArrowRight size={11}/></button>
-        </td>
       </tr>
-      {trsOpen && <TRSDrawer p={p} onClose={()=>setTrsOpen(false)}/>}
     </>
   );
 };
@@ -1372,6 +1507,16 @@ export default function App() {
   const [search, setSearch]        = useState("");
   const [ctFilter, setCtFilter]    = useState("All Case Types");
   const [sevFilter, setSevFilter]  = useState("All Severity");
+  const [statusFilter, setStatusFilter] = useState("Active");
+  const [dateFilter, setDateFilter] = useState("All Severity");
+  const [customStart, setCustomStart] = useState("");
+  const [customEnd, setCustomEnd] = useState("");
+  const DATE_OPTIONS = ["All Severity","Low","Intermediate","High","Very High","EDD","Visit Date","Custom Date Range"];
+  const STATUS_OPTIONS = ["ALL","Active","In Progress","Not Started","Generated","Follow Up","Complete","Inactive","Cancelled"];
+  const statusMap = {"Active":"active","In Progress":"in-progress","Not Started":"pending","Generated":"generated","Follow Up":"follow-up","Complete":"complete","Inactive":"inactive","Cancelled":"cancelled"};
+  const parseDate = (value) => value.includes("-")
+    ? new Date(`${value}T00:00:00`)
+    : (() => { const [month, day, year] = value.split("/").map(Number); return new Date(year, month - 1, day); })();
 
   if(screen==="workspace" && activePatient)
     return (
@@ -1380,13 +1525,17 @@ export default function App() {
       </div></>
     );
 
-  const COLS = ["PATIENT / GA","EDD","LAB VALUES","TRS","ACOG RISK","ACTIVE ORDER","PROVIDER","ANEMIA SEVERITY","ACTIONS"];
+  const COLS = ["PATIENT / GA","LAB VALUES","BLOOD PRESSURE","MATERNAL HEALTH RISK","ACTIVE ORDER","PROVIDER"];
   const filtered = PATIENTS.filter(p => {
-    const ag = getAnemiaGrade(p.labs[0].value);
     return (!search || p.name.toLowerCase().includes(search.toLowerCase()) || p.id.toLowerCase().includes(search.toLowerCase()) || p.provider.toLowerCase().includes(search.toLowerCase()))
       && (ctFilter==="All Case Types" || p.caseType===ctFilter)
-      && (sevFilter==="All Severity"  || ag.label===sevFilter);
+      && (statusFilter==="ALL" || p.carePlanStatus===statusMap[statusFilter] || (statusFilter==="Active" && (p.carePlanStatus==="in-progress"||p.carePlanStatus==="generated")))
+      && (!["Low","Intermediate","High","Very High"].includes(dateFilter) || p._mhr.cat===dateFilter)
+      && (dateFilter!=="Custom Date Range" || (!customStart || parseDate(p.edd) >= parseDate(customStart)) && (!customEnd || parseDate(p.edd) <= parseDate(customEnd)));
   });
+  const displayedPatients = ["EDD","Visit Date"].includes(dateFilter)
+    ? [...filtered].sort((a,b) => parseDate(dateFilter==="Visit Date" ? a.followUpDate : a.edd) - parseDate(dateFilter==="Visit Date" ? b.followUpDate : b.edd))
+    : filtered;
 
   return (
     <><GlobalReset/><div style={{display:"flex",flexDirection:"column",height:"100dvh",overflow:"hidden",fontFamily:font,background:C.grey[200]}}>
@@ -1418,7 +1567,7 @@ export default function App() {
             </div>
             <div style={{flex:1}}/>
             <Filter size={13} color={C.grey[500]}/><span style={{fontSize:12,color:C.grey[500],fontFamily:font}}>Filter by:</span>
-            {[{v:ctFilter,s:setCtFilter,o:CASE_TYPES},{v:sevFilter,s:setSevFilter,o:["All Severity","Critical","High","Low"]}].map((dd,i) => (
+            {[{v:ctFilter,s:setCtFilter,o:CASE_TYPES}].map((dd,i) => (
               <div key={i} style={{position:"relative"}}>
                 <select value={dd.v} onChange={e=>dd.s(e.target.value)} style={{appearance:"none",padding:"6px 26px 6px 10px",border:`1px solid ${C.grey[300]}`,borderRadius:8,fontSize:12,color:C.grey[700],background:C.grey[100],cursor:"pointer",outline:"none",fontFamily:font}}>
                   {dd.o.map(o=><option key={o}>{o}</option>)}
@@ -1426,6 +1575,26 @@ export default function App() {
                 <ChevronDown size={10} color={C.grey[500]} style={{position:"absolute",right:7,top:"50%",transform:"translateY(-50%)",pointerEvents:"none"}}/>
               </div>
             ))}
+            <div style={{position:"relative",display:"flex",alignItems:"center"}}>
+              <label style={{position:"absolute",top:-7,left:9,padding:"0 4px",background:C.grey[100],fontSize:10,color:C.grey[600],fontFamily:font,lineHeight:1}}>Select Status *</label>
+              <select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)} style={{appearance:"none",padding:"8px 28px 8px 12px",border:`1px solid ${C.grey[400]}`,borderRadius:4,fontSize:12,color:C.grey[800],background:C.grey[100],cursor:"pointer",outline:"none",fontFamily:font,minWidth:150}}>
+                {STATUS_OPTIONS.map(o=><option key={o}>{o}</option>)}
+              </select>
+              <ChevronDown size={10} color={C.grey[500]} style={{position:"absolute",right:9,top:"50%",transform:"translateY(-50%)",pointerEvents:"none"}}/>
+            </div>
+            <div style={{position:"relative",display:"flex",alignItems:"center"}}>
+              <label style={{position:"absolute",top:-7,left:9,padding:"0 4px",background:C.grey[100],fontSize:10,color:C.grey[600],fontFamily:font,lineHeight:1}}>Sort By *</label>
+              <select value={dateFilter} onChange={e=>setDateFilter(e.target.value)} style={{appearance:"none",padding:"8px 28px 8px 12px",border:`1px solid ${C.primary[400]}`,borderRadius:4,fontSize:12,color:C.grey[800],background:C.grey[100],cursor:"pointer",outline:"none",fontFamily:font,minWidth:150}}>
+                {DATE_OPTIONS.map(o=><option key={o}>{o}</option>)}
+              </select>
+              <ChevronDown size={10} color={C.grey[500]} style={{position:"absolute",right:9,top:"50%",transform:"translateY(-50%)",pointerEvents:"none"}}/>
+            </div>
+            {dateFilter==="Custom Date Range" && <>
+              <input type="date" value={customStart} onChange={e=>setCustomStart(e.target.value)} aria-label="Custom date range start" style={{padding:"7px 8px",border:`1px solid ${C.grey[300]}`,borderRadius:6,fontSize:12,color:C.grey[700],background:C.grey[100],fontFamily:font}}/>
+              <span style={{fontSize:12,color:C.grey[500],fontFamily:font}}>to</span>
+              <input type="date" value={customEnd} onChange={e=>setCustomEnd(e.target.value)} aria-label="Custom date range end" style={{padding:"7px 8px",border:`1px solid ${C.grey[300]}`,borderRadius:6,fontSize:12,color:C.grey[700],background:C.grey[100],fontFamily:font}}/>
+            </>}
+            <button onClick={()=>{setSearch("");setCtFilter("All Case Types");setSevFilter("All Severity");setStatusFilter("Active");setDateFilter("All Severity");setCustomStart("");setCustomEnd("");}} aria-label="Reset all filters to default" title="Reset filters" style={{display:"flex",alignItems:"center",justifyContent:"center",width:32,height:32,border:`1px solid ${C.grey[400]}`,borderRadius:6,background:C.grey[100],color:C.grey[700],cursor:"pointer",outline:"none"}}><RotateCcw size={15} color={C.grey[700]}/></button>
           </div>
 
           {/* Table */}
@@ -1433,13 +1602,13 @@ export default function App() {
             <table style={{width:"100%",borderCollapse:"collapse"}}>
               <thead>
                 <tr style={{background:C.grey[200],borderBottom:`1px solid ${C.grey[300]}`}}>
-                  {COLS.map(h => <th key={h} style={{fontSize:12,fontWeight:700,letterSpacing:"0.06em",color:C.grey[600],textAlign:"left",padding:"10px 16px",textTransform:"uppercase",whiteSpace:"nowrap",fontFamily:font}}>{h}</th>)}
+                  {COLS.map(h => <th key={h} style={{fontSize:12,fontWeight:700,letterSpacing:"0.06em",color:C.grey[600],textAlign:h==="MATERNAL HEALTH RISK"?"center":"left",padding:"10px 16px",textTransform:"uppercase",whiteSpace:"nowrap",fontFamily:font}}>{h}</th>)}
                 </tr>
               </thead>
               <tbody>
-                {filtered.length===0
+                {displayedPatients.length===0
                   ? <tr><td colSpan={COLS.length} style={{padding:24,textAlign:"center",fontSize:14,color:C.grey[500],fontFamily:font}}>No patients match</td></tr>
-                  : filtered.map(p => <PatientRow key={p.id} p={p}
+                  : displayedPatients.map(p => <PatientRow key={p.id} p={p}
                       onOpen={(p,zone="overview")=>{setActivePatient(p);setDefaultZone(zone);setScreen("workspace");}}
                       onOpenACOG={p=>setAcogPatient(p)}/>)
                 }
@@ -1449,14 +1618,14 @@ export default function App() {
 
           {/* Footer */}
           <div style={{padding:"9px 16px",borderTop:`1px solid ${C.grey[300]}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <span style={{fontSize:12,color:C.grey[500],fontFamily:font}}>Showing {filtered.length} of {PATIENTS.length} patients</span>
+            <span style={{fontSize:12,color:C.grey[500],fontFamily:font}}>Showing {displayedPatients.length} of {PATIENTS.length} patients</span>
             <div style={{display:"flex",alignItems:"center",gap:6}}><div style={{width:6,height:6,borderRadius:"50%",background:C.success[400]}}/><span style={{fontSize:12,color:C.success[400],fontFamily:font}}>FHIR R4 Live · Synced 2 min ago</span></div>
           </div>
         </div>
       </div>
 
-      {/* ACOG Modal */}
-      {acogPatient && <ACOGModal p={acogPatient} onClose={()=>setAcogPatient(null)}/>}
+      {/* MHR Modal */}
+      {acogPatient && <MHRModal p={acogPatient} onClose={()=>setAcogPatient(null)}/>}
     </div></>
   );
 }
