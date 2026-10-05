@@ -1089,7 +1089,7 @@ const CarePlanZone = ({p}) => {
           <div style={{background:`linear-gradient(135deg,${C.primary[600]},${C.primary[500]},${C.secondary[600]})`,borderRadius:10,padding:"16px 20px",marginBottom:20,position:"relative",overflow:"hidden"}}>
             <div style={{position:"absolute",inset:0,opacity:0.06,backgroundImage:"radial-gradient(rgba(255,255,255,0.9) 1px,transparent 1px)",backgroundSize:"22px 22px",pointerEvents:"none"}}/>
             <div style={{position:"relative"}}>
-              <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",color:"rgba(255,255,255,0.5)",fontFamily:font,marginBottom:8}}>AI Diagnosis & Recommendation · {p.aiConfidence}% Confidence</div>
+              <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",color:"rgba(255,255,255,0.5)",fontFamily:font,marginBottom:8}}>AI Diagnosis & Recommendation</div>
               <div style={{fontSize:16,fontWeight:700,color:"#fff",fontFamily:font,marginBottom:8}}>{p.diagnosis}</div>
               <div style={{fontSize:14,color:"rgba(255,255,255,0.7)",fontFamily:font,lineHeight:1.6,marginBottom:14}}>
                 Patient meets ACOG criteria: Hgb {p.labs[0].value} g/dL at {p.gestAge}, Ferritin {p.labs[1].value} ng/mL. Evidence-based protocol per ACOG Practice Bulletin #233 (2021) – Anemia in Pregnancy.
