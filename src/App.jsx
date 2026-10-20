@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { EPISODES, VISITS, VISIT_TYPES, getActiveEpisodes, formatDate, nextVisit, visitsForEpisode } from "./mock/episodes.js";
 
 const GlobalReset = () => {
   useEffect(() => {
@@ -1410,7 +1411,7 @@ const MiniWorklist = ({patients,activeId,onSelect,onBack}) => (
 );
 
 // ── Patient Workspace (same structure as BloodHealth) ─────────────
-const PatientWorkspace = ({patient,allPatients,onBack,onSelectPatient,defaultZone="overview"}) => {
+const PatientWorkspace = ({patient,allPatients,episodeId,onBack,onSelectPatient,defaultZone="overview"}) => {
   const [zone, setZone]         = useState(defaultZone==="ai"?"overview":defaultZone);
   const [iqOpen, setIqOpen]     = useState(false);
   const [iqExpanded, setIqExpanded] = useState(false);
@@ -1453,21 +1454,41 @@ const PatientWorkspace = ({patient,allPatients,onBack,onSelectPatient,defaultZon
 // ── Worklist Row (same columns as BloodHealth, OB data) ───────────
 const PatientRow = ({p, onOpen, onOpenACOG}) => {
   const ferC = p.labs[1].status==="critical"?C.error[400]:p.labs[1].status==="high"||p.labs[1].status==="borderline"?C.orange[400]:C.grey[600];
+  const ep = p._ep;
+  const nv = ep ? ep.nextVisit : null;
+  const noUpcoming = ep && ep.hasNoUpcoming;
   return (
     <>
-      <tr style={{borderBottom:`1px solid ${C.grey[300]}`,cursor:"pointer"}} onMouseEnter={e=>e.currentTarget.style.background=C.grey[200]} onMouseLeave={e=>e.currentTarget.style.background="transparent"} onClick={()=>onOpen(p,"overview")}>
+      <tr style={{borderBottom:`1px solid ${C.grey[300]}`,cursor:"pointer",background:noUpcoming?C.orange[100]:"transparent"}} onMouseEnter={e=>e.currentTarget.style.background=noUpcoming?C.orange[100]:C.grey[200]} onMouseLeave={e=>e.currentTarget.style.background=noUpcoming?C.orange[100]:"transparent"} onClick={()=>onOpen(p,"overview",ep?.id)}>
 
         {/* PATIENT */}
         <td style={{padding:"12px 16px",minWidth:190}}>
           <span style={{fontSize:14,fontWeight:600,color:C.grey[800],fontFamily:font,display:"block",marginBottom:2}}>{p.name}</span>
           <span style={{fontSize:12,color:C.grey[500],fontFamily:font,display:"block",marginBottom:3}}>MRN {p.id} · Age {p.age}</span>
-          <span style={{fontSize:12,color:C.grey[700],fontFamily:font,display:"block",marginBottom:2}}><strong style={{fontWeight:700}}>Visit Date</strong> {p.followUpDate}</span>
-          <span style={{fontSize:12,color:C.grey[700],fontFamily:font,display:"block",marginBottom:5}}><strong style={{fontWeight:700}}>EDD</strong> {p.edd}</span>
+          <span style={{fontSize:12,color:C.grey[700],fontFamily:font,display:"block",marginBottom:2}}><strong style={{fontWeight:700}}>EDD</strong> {formatDate(ep?ep.edd:p.edd)}</span>
           <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
-            <span style={{fontSize:10,fontWeight:600,color:C.grey[700],background:C.grey[200],border:`1px solid ${C.grey[300]}`,borderRadius:4,padding:"2px 6px",fontFamily:font}}>{p.parity}</span>
-            <span style={{fontSize:10,fontWeight:600,color:C.grey[700],background:C.grey[200],border:`1px solid ${C.grey[300]}`,borderRadius:4,padding:"2px 6px",fontFamily:font}}>{p.gestAge.replace(" wks","W")}</span>
-            <span style={{fontSize:10,fontWeight:600,color:C.grey[700],background:C.grey[200],border:`1px solid ${C.grey[300]}`,borderRadius:4,padding:"2px 6px",fontFamily:font}}>{p.caseType}</span>
+            <span style={{fontSize:10,fontWeight:600,color:C.grey[700],background:C.grey[200],border:`1px solid ${C.grey[300]}`,borderRadius:4,padding:"2px 6px",fontFamily:font}}>{ep?ep.parityLabel:p.parity}</span>
+            <span style={{fontSize:10,fontWeight:600,color:C.grey[700],background:C.grey[200],border:`1px solid ${C.grey[300]}`,borderRadius:4,padding:"2px 6px",fontFamily:font}}>{ep?`${ep.ga.weeks}W`:p.gestAge.replace(" wks","W")}</span>
+            <span style={{fontSize:10,fontWeight:600,color:C.grey[700],background:C.grey[200],border:`1px solid ${C.grey[300]}`,borderRadius:4,padding:"2px 6px",fontFamily:font}}>{ep?ep.obType:p.caseType}</span>
+            {ep && ep.status==="postpartum" && <span style={{fontSize:10,fontWeight:600,color:C.secondary[500],background:C.secondary[100],border:`1px solid ${C.secondary[300]}`,borderRadius:4,padding:"2px 6px",fontFamily:font}}>Postpartum</span>}
           </div>
+        </td>
+
+        {/* NEXT VISIT */}
+        <td style={{padding:"12px 16px",minWidth:200}}>
+          {noUpcoming ? (
+            <div style={{display:"flex",alignItems:"center",gap:5}}>
+              <div style={{width:7,height:7,borderRadius:"50%",background:C.orange[400],flexShrink:0,boxShadow:`0 0 5px ${C.orange[400]}`}}/>
+              <span style={{fontSize:13,fontWeight:600,color:C.orange[400],fontFamily:font}}>No upcoming visit</span>
+            </div>
+          ) : nv ? (
+            <div>
+              <div style={{fontSize:13,fontWeight:600,color:C.grey[800],fontFamily:font,marginBottom:2}}>{formatDate(nv.date)}</div>
+              <div style={{fontSize:12,color:C.secondary[500],fontFamily:font,fontWeight:600,marginBottom:1}}>{nv.type}</div>
+              <div style={{fontSize:11,color:C.grey[600],fontFamily:font}}>{nv.provider}</div>
+              <div style={{fontSize:11,color:C.grey[500],fontFamily:font}}>{nv.location}</div>
+            </div>
+          ) : <span style={{fontSize:13,color:C.grey[400],fontFamily:font}}>—</span>}
         </td>
 
         {/* LAB VALUES */}
@@ -1528,6 +1549,7 @@ export default function App() {
   const [screen, setScreen]        = useState("worklist");
   const [activePatient, setActivePatient] = useState(null);
   const [defaultZone, setDefaultZone]     = useState("overview");
+  const [activeEpisodeId, setActiveEpisodeId] = useState(null);
   const [acogPatient, setAcogPatient]     = useState(null);
   const [facilityFilter, setFacilityFilter] = useState([...FACILITIES]);
   const [search, setSearch]        = useState("");
@@ -1536,13 +1558,14 @@ export default function App() {
   const [statusFilter, setStatusFilter] = useState("Active");
   const [sortFilter, setSortFilter] = useState("All Severity");
   const [dateFilter, setDateFilter] = useState("Visit Date");
-  const [sortBy, setSortBy] = useState("Severity");
+  const [sortBy, setSortBy] = useState("Next Visit Date");
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
   const [facilityMenuOpen, setFacilityMenuOpen] = useState(false);
+  const [vtFilter, setVtFilter] = useState("All Visit Types");
   const SORT_OPTIONS = ["All Severity","Low","Intermediate","High","Very High"];
   const DATE_FILTER_OPTIONS = ["Visit Date","EDD","Custom Date Range"];
-  const SORT_BY_OPTIONS = ["Visit Date","Severity"];
+  const SORT_BY_OPTIONS = ["Next Visit Date","Severity"];
   const SEVERITY_RANK = {"Low":1,"Intermediate":2,"High":3,"Very High":4};
   const STATUS_OPTIONS = ["ALL","Active","In Progress","Not Started","Generated","Follow Up","Complete","Inactive","Cancelled"];
   const statusMap = {"Active":"active","In Progress":"in-progress","Not Started":"pending","Generated":"generated","Follow Up":"follow-up","Complete":"complete","Inactive":"inactive","Cancelled":"cancelled"};
@@ -1553,22 +1576,37 @@ export default function App() {
   if(screen==="workspace" && activePatient)
     return (
       <><GlobalReset/><div style={{height:"100dvh",overflow:"hidden",display:"flex",flexDirection:"column"}}>
-        <PatientWorkspace patient={activePatient} allPatients={PATIENTS} onBack={()=>setScreen("worklist")} onSelectPatient={p=>setActivePatient(p)} defaultZone={defaultZone}/>
+        <PatientWorkspace patient={activePatient} allPatients={PATIENTS} episodeId={activeEpisodeId} onBack={()=>setScreen("worklist")} onSelectPatient={p=>setActivePatient(p)} defaultZone={defaultZone}/>
       </div></>
     );
 
-  const COLS = ["PATIENT / GA","LAB VALUES","BLOOD PRESSURE","MATERNAL HEALTH RISK","ACTIVE ORDER","PROVIDER"];
-  const filtered = PATIENTS.filter(p => {
+  const COLS = ["PATIENT / GA","NEXT VISIT","LAB VALUES","BLOOD PRESSURE","MATERNAL HEALTH RISK","ACTIVE ORDER","PROVIDER"];
+
+  // Build one row per active episode from the mock episodes module
+  const activeEpisodes = getActiveEpisodes();
+  const episodeRows = activeEpisodes.map(ep => {
+    const patient = PATIENTS.find(p => p.id === ep.patientId);
+    return { ...patient, _ep: ep };
+  }).filter(p => p && p.id);
+
+  const filtered = episodeRows.filter(p => {
+    const ep = p._ep;
+    const nv = ep.nextVisit;
     return facilityFilter.includes(p.facility)
       && (!search || p.name.toLowerCase().includes(search.toLowerCase()) || p.id.toLowerCase().includes(search.toLowerCase()) || p.provider.toLowerCase().includes(search.toLowerCase()))
       && (ctFilter==="All Case Types" || p.caseType===ctFilter)
       && (statusFilter==="ALL" || p.carePlanStatus===statusMap[statusFilter] || (statusFilter==="Active" && (p.carePlanStatus==="in-progress"||p.carePlanStatus==="generated")))
       && (!["Low","Intermediate","High","Very High"].includes(sortFilter) || p._mhr.cat===sortFilter)
-      && (dateFilter==="EDD" || dateFilter==="Visit Date" || (!customStart || parseDate(p.edd) >= parseDate(customStart)) && (!customEnd || parseDate(p.edd) <= parseDate(customEnd)));
+      && (vtFilter==="All Visit Types" || (nv && nv.type===vtFilter))
+      && (dateFilter==="EDD" || dateFilter==="Visit Date" || (!customStart || (!nv || nv.date >= customStart)) && (!customEnd || (!nv || nv.date <= customEnd)));
   });
   const displayedPatients = sortBy==="Severity"
     ? [...filtered].sort((a,b) => (SEVERITY_RANK[b._mhr.cat]||0) - (SEVERITY_RANK[a._mhr.cat]||0))
-    : [...filtered].sort((a,b) => parseDate(a.followUpDate) - parseDate(b.followUpDate));
+    : [...filtered].sort((a,b) => {
+        const aD = a._ep.nextVisit ? a._ep.nextVisit.date : "9999-12-31";
+        const bD = b._ep.nextVisit ? b._ep.nextVisit.date : "9999-12-31";
+        return aD.localeCompare(bD);
+      });
 
   return (
     <><GlobalReset/><div style={{display:"flex",flexDirection:"column",height:"100dvh",overflow:"hidden",fontFamily:font,background:C.grey[200]}}>
@@ -1619,9 +1657,9 @@ export default function App() {
             </div>
             <div style={{flex:1}}/>
             <Filter size={13} color={C.grey[500]}/><span style={{fontSize:12,color:C.grey[500],fontFamily:font}}>Filter by:</span>
-            {[{v:ctFilter,s:setCtFilter,o:CASE_TYPES}].map((dd,i) => (
+            {[{v:ctFilter,s:setCtFilter,o:CASE_TYPES},{v:vtFilter,s:setVtFilter,o:["All Visit Types",...VISIT_TYPES]}].map((dd,i) => (
               <div key={i} style={{position:"relative",display:"flex",alignItems:"center"}}>
-                <label style={{position:"absolute",top:-7,left:9,padding:"0 4px",background:C.grey[100],fontSize:10,color:C.grey[600],fontFamily:font,lineHeight:1}}>Case Type *</label>
+                <label style={{position:"absolute",top:-7,left:9,padding:"0 4px",background:C.grey[100],fontSize:10,color:C.grey[600],fontFamily:font,lineHeight:1}}>{i===0?"Case Type *":"Visit Type *"}</label>
                 <select value={dd.v} onChange={e=>dd.s(e.target.value)} style={{appearance:"none",padding:"8px 28px 8px 12px",border:`1px solid ${C.grey[400]}`,borderRadius:4,fontSize:12,color:C.grey[800],background:C.grey[100],cursor:"pointer",outline:"none",fontFamily:font,minWidth:150}}>
                   {dd.o.map(o=><option key={o}>{o}</option>)}
                 </select>
@@ -1661,7 +1699,7 @@ export default function App() {
               <span style={{fontSize:12,color:C.grey[500],fontFamily:font}}>to</span>
               <input type="date" value={customEnd} onChange={e=>setCustomEnd(e.target.value)} aria-label="Custom date range end" style={{padding:"7px 8px",border:`1px solid ${C.grey[300]}`,borderRadius:6,fontSize:12,color:C.grey[700],background:C.grey[100],fontFamily:font}}/>
             </>}
-            <button onClick={()=>{setFacilityFilter([...FACILITIES]);setSearch("");setCtFilter("All Case Types");setSevFilter("All Severity");setStatusFilter("Active");setSortFilter("All Severity");setDateFilter("Visit Date");setSortBy("Visit Date");setCustomStart("");setCustomEnd("");}} aria-label="Reset all filters to default" title="Reset filters" style={{display:"flex",alignItems:"center",justifyContent:"center",width:32,height:32,border:`1px solid ${C.grey[400]}`,borderRadius:6,background:C.grey[100],color:C.grey[700],cursor:"pointer",outline:"none"}}><RotateCcw size={15} color={C.grey[700]}/></button>
+            <button onClick={()=>{setFacilityFilter([...FACILITIES]);setSearch("");setCtFilter("All Case Types");setSevFilter("All Severity");setStatusFilter("Active");setSortFilter("All Severity");setDateFilter("Visit Date");setSortBy("Next Visit Date");setCustomStart("");setCustomEnd("");setVtFilter("All Visit Types");}} aria-label="Reset all filters to default" title="Reset filters" style={{display:"flex",alignItems:"center",justifyContent:"center",width:32,height:32,border:`1px solid ${C.grey[400]}`,borderRadius:6,background:C.grey[100],color:C.grey[700],cursor:"pointer",outline:"none"}}><RotateCcw size={15} color={C.grey[700]}/></button>
           </div>
 
           {/* Table */}
@@ -1675,8 +1713,8 @@ export default function App() {
               <tbody>
                 {displayedPatients.length===0
                   ? <tr><td colSpan={COLS.length} style={{padding:24,textAlign:"center",fontSize:14,color:C.grey[500],fontFamily:font}}>No patients match</td></tr>
-                  : displayedPatients.map(p => <PatientRow key={p.id} p={p}
-                      onOpen={(p,zone="overview")=>{setActivePatient(p);setDefaultZone(zone);setScreen("workspace");}}
+                  : displayedPatients.map(p => <PatientRow key={p._ep?._id||p.id} p={p}
+                      onOpen={(p,zone="overview",episodeId=null)=>{setActivePatient(p);setActiveEpisodeId(episodeId);setDefaultZone(zone);setScreen("workspace");}}
                       onOpenACOG={p=>setAcogPatient(p)}/>)
                 }
               </tbody>
@@ -1685,7 +1723,7 @@ export default function App() {
 
           {/* Footer */}
           <div style={{padding:"9px 16px",borderTop:`1px solid ${C.grey[300]}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <span style={{fontSize:12,color:C.grey[500],fontFamily:font}}>Showing {displayedPatients.length} of {PATIENTS.length} patients</span>
+            <span style={{fontSize:12,color:C.grey[500],fontFamily:font}}>Showing {displayedPatients.length} of {episodeRows.length} episodes</span>
             <div style={{display:"flex",alignItems:"center",gap:6}}><div style={{width:6,height:6,borderRadius:"50%",background:C.success[400]}}/><span style={{fontSize:12,color:C.success[400],fontFamily:font}}>FHIR R4 Live · Synced 2 min ago</span></div>
           </div>
         </div>
