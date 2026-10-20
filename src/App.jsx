@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { EPISODES, VISITS, VISIT_TYPES, getActiveEpisodes, formatDate, nextVisit, visitsForEpisode } from "./mock/episodes.js";
+import { EPISODES, VISITS, VISIT_TYPES, getActiveEpisodes, getEpisode, formatDate, nextVisit, futureVisits, pastVisits, visitsForEpisode, visitOneLiner, gestationalAge, gaAtVisit, getMaternalRiskTier } from "./mock/episodes.js";
 
 const GlobalReset = () => {
   useEffect(() => {
@@ -10,7 +10,7 @@ const GlobalReset = () => {
   }, []);
   return null;
 };
-import { Search, Filter, ChevronDown, ArrowRight, ChevronLeft, MessageSquare, ClipboardList, User, Hash, Stethoscope, RotateCcw } from "lucide-react";
+import { Search, Filter, ChevronDown, ArrowRight, ChevronLeft, MessageSquare, ClipboardList, User, Hash, Stethoscope, RotateCcw, CalendarDays, Clock, MapPin, ExternalLink, X, AlertCircle, CheckCircle2 } from "lucide-react";
 import { Button } from "./components/Button";
 
 // ── Design tokens (identical to BloodHealth) ──────────────────────
@@ -1332,14 +1332,19 @@ const IQAssistantPanel = ({p, onClose, expanded, onToggleExpand}) => {
   );
 };
 
-// ── Patient Header — IQ Assistant button on far right ─────────────
-const PatientHeader = ({p, onOpenIQ}) => {
-  const aGrade = getAnemiaGrade(p.labs[0].value);
+// ── Patient Header — episode-scoped, shown across all tabs ───────
+const PatientHeader = ({p, episode, onOpenIQ}) => {
+  const ep = episode || getEpisode(null);
+  const mhr = p._mhr;
+  const tier = getMaternalRiskTier(mhr.score);
+  const ga = episode ? gestationalAge(episode) : null;
+  const gaLabel = ga ? (ga.postpartum ? `${ga.weeks} weeks postpartum` : `${ga.weeks}w${ga.days}d`) : p.gestAge;
   return (
     <div style={{background:"#fff",borderBottom:`1px solid ${C.grey[300]}`,flexShrink:0,padding:"12px 20px",display:"flex",alignItems:"center",gap:16}}>
       <div style={{flex:1,minWidth:0}}>
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:5}}>
           <span style={{fontSize:18,fontWeight:700,color:C.grey[800],fontFamily:font}}>{p.name}</span>
+          {episode && episode.status==="postpartum" && <span style={{fontSize:10,fontWeight:600,color:C.secondary[500],background:C.secondary[100],border:`1px solid ${C.secondary[300]}`,borderRadius:4,padding:"2px 7px",fontFamily:font}}>Postpartum</span>}
         </div>
         <div style={{display:"flex",alignItems:"center",gap:4,marginBottom:0,flexWrap:"wrap"}}>
           <Stethoscope size={11} color={C.grey[500]}/><span style={{fontSize:12,fontWeight:600,color:C.grey[700],fontFamily:font}}>{p.provider}</span>
@@ -1348,11 +1353,13 @@ const PatientHeader = ({p, onOpenIQ}) => {
           <span style={{fontSize:12,color:C.grey[400],margin:"0 2px"}}>·</span>
           <User size={11} color={C.grey[500]}/><span style={{fontSize:12,color:C.grey[700],fontFamily:font}}>Age {p.age}</span>
           <span style={{fontSize:12,color:C.grey[400],margin:"0 2px"}}>·</span>
-          <span style={{fontSize:12,fontWeight:700,color:C.grey[700],fontFamily:font}}>Visit Date</span><span style={{fontSize:12,color:C.grey[700],fontFamily:font,marginLeft:3}}>{p.followUpDate}</span>
+          <span style={{fontSize:12,fontWeight:700,color:C.grey[700],fontFamily:font}}>GA</span><span style={{fontSize:12,color:C.grey[700],fontFamily:font,marginLeft:3}}>{gaLabel}</span>
           <span style={{fontSize:12,color:C.grey[400],margin:"0 2px"}}>·</span>
-          <span style={{fontSize:12,fontWeight:700,color:C.grey[700],fontFamily:font}}>EDD</span><span style={{fontSize:12,color:C.grey[700],fontFamily:font,marginLeft:3}}>{p.edd}</span>
+          <span style={{fontSize:12,fontWeight:700,color:C.grey[700],fontFamily:font}}>EDD</span><span style={{fontSize:12,color:C.grey[700],fontFamily:font,marginLeft:3}}>{episode?formatDate(episode.edd):p.edd}</span>
           <span style={{fontSize:12,color:C.grey[400],margin:"0 2px"}}>·</span>
-          <span style={{fontSize:12,color:C.grey[500],fontFamily:font}}>Obstetric History</span><span style={{fontSize:12,fontWeight:600,color:C.grey[700],fontFamily:font,marginLeft:3}}>{p.parity}</span>
+          <span style={{fontSize:12,color:C.grey[500],fontFamily:font}}>Obstetric History</span><span style={{fontSize:12,fontWeight:600,color:C.grey[700],fontFamily:font,marginLeft:3}}>{episode?`G${episode.gravida}P${episode.para}`:p.parity}</span>
+          <span style={{fontSize:12,color:C.grey[400],margin:"0 2px"}}>·</span>
+          <span style={{fontSize:12,fontWeight:700,color:tier.color,fontFamily:font}}>Risk {mhr.score}/74</span><span style={{fontSize:11,fontWeight:600,color:tier.color,background:tier.color+"22",borderRadius:4,padding:"1px 6px",fontFamily:font,marginLeft:4}}>{tier.label}</span>
         </div>
       </div>
       {/* IQ Assistant button — matches screenshot: flat teal, pill radius */}
@@ -1371,7 +1378,7 @@ const PatientHeader = ({p, onOpenIQ}) => {
 // ── Zone Tabs (AI Summary tab removed — chat is now global) ──────
 const ZoneTabs = ({active,onChange}) => (
   <div style={{background:C.grey[100],borderBottom:`1px solid ${C.grey[300]}`,display:"flex",padding:"0 20px",flexShrink:0}}>
-    {[{id:"overview",label:"Clinical Decision Support",Icon:User},{id:"cp",label:"Optimization Recommendations",Icon:ClipboardList}].map(({id,label,Icon}) => {
+    {[{id:"overview",label:"Clinical Decision Support",Icon:User},{id:"cp",label:"Optimization Recommendations",Icon:ClipboardList},{id:"visits",label:"Visits",Icon:CalendarDays}].map(({id,label,Icon}) => {
       const a = active===id;
       return <div key={id} onClick={()=>onChange(id)} style={{display:"flex",alignItems:"center",gap:6,padding:"10px 16px 9px",borderBottom:a?`2px solid ${C.primary[500]}`:"2px solid transparent",cursor:"pointer",fontSize:14,fontWeight:a?600:400,color:a?C.grey[800]:C.grey[500],fontFamily:font,marginBottom:-1,transition:"all 0.12s",whiteSpace:"nowrap"}}><Icon size={14} strokeWidth={1.5} color={a?C.primary[500]:C.grey[500]}/>{label}</div>;
     })}
@@ -1380,46 +1387,20 @@ const ZoneTabs = ({active,onChange}) => (
 
 
 
-// ── Mini Worklist (same as BloodHealth) ───────────────────────────
-const MiniWorklist = ({patients,activeId,onSelect,onBack}) => (
-  <div style={{width:240,flexShrink:0,background:"#fff",borderRight:`1px solid ${C.grey[300]}`,display:"flex",flexDirection:"column",overflow:"hidden",height:"100%"}}>
-    <div onClick={onBack} style={{padding:"10px 16px",borderBottom:`1px solid ${C.grey[300]}`,display:"flex",alignItems:"center",gap:6,cursor:"pointer",minHeight:44}} onMouseEnter={e=>e.currentTarget.style.background=C.grey[200]} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-      <ChevronLeft size={13} strokeWidth={2.5} color={C.grey[500]}/>
-      <span style={{fontSize:12,fontWeight:600,color:C.grey[600],fontFamily:font}}>OB Anemia Worklist</span>
-    </div>
-    <div style={{flex:1,overflowY:"auto",minHeight:0}}>
-      {patients.map(p => {
-        const a = p.id===activeId;
-        const cpC = p.activeRecommendation===null ? C.grey[500] : p.carePlanStatus==="generated"?C.success[400]:p.carePlanStatus==="in-progress"?C.orange[400]:p.carePlanStatus==="pending"?C.error[400]:C.grey[400];
-        return (
-          <div key={p.id} onClick={()=>onSelect(p)} style={{padding:"12px 16px",borderBottom:`1px solid ${C.grey[300]}`,borderLeft:`3px solid ${a?C.primary[500]:"transparent"}`,background:a?C.primary[100]:"transparent",cursor:"pointer",transition:"background 0.12s"}}
-            onMouseEnter={e=>{if(!a)e.currentTarget.style.background=C.grey[200];}}
-            onMouseLeave={e=>{if(!a)e.currentTarget.style.background="transparent";}}>
-            <div style={{fontSize:14,fontWeight:600,color:a?C.primary[500]:C.grey[800],fontFamily:font,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginBottom:2}}>{p.name}</div>
-
-            <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:4}}>
-              <span style={{fontSize:10,fontWeight:600,color:C.grey[700],background:C.grey[200],border:`1px solid ${C.grey[300]}`,borderRadius:4,padding:"1px 6px",fontFamily:font}}>{p.parity}</span>
-              <span style={{fontSize:10,fontWeight:600,color:C.grey[700],background:C.grey[200],border:`1px solid ${C.grey[300]}`,borderRadius:4,padding:"1px 6px",fontFamily:font}}>{p.gestAge.replace(" wks","W")}</span>
-              <span style={{fontSize:10,fontWeight:600,color:C.grey[700],background:C.grey[200],border:`1px solid ${C.grey[300]}`,borderRadius:4,padding:"1px 6px",fontFamily:font}}>{p.caseType}</span>
-            </div>
-            <div style={{display:"flex",alignItems:"center",gap:4}}><div style={{width:5,height:5,borderRadius:"50%",background:cpC,flexShrink:0}}/><span style={{fontSize:14,color:cpC,fontFamily:font,fontWeight:600}}>{p.activeRecommendation===null?"No Active Recommendation":p.carePlanStatus==="generated"?"Care Recommendation Generated":p.carePlanStatus==="in-progress"?"Care Recommendation In Progress":"Care Recommendation Not Started"}</span></div>
-          </div>
-        );
-      })}
-    </div>
-  </div>
-);
-
 // ── Patient Workspace (same structure as BloodHealth) ─────────────
 const PatientWorkspace = ({patient,allPatients,episodeId,onBack,onSelectPatient,defaultZone="overview"}) => {
   const [zone, setZone]         = useState(defaultZone==="ai"?"overview":defaultZone);
   const [iqOpen, setIqOpen]     = useState(false);
   const [iqExpanded, setIqExpanded] = useState(false);
+  const episode = episodeId ? getEpisode(episodeId) : null;
   return (
     <div style={{display:"flex",flexDirection:"column",flex:1,minHeight:0,fontFamily:font,background:C.grey[200]}}>
       {/* Top nav */}
       <div style={{height:56,flexShrink:0,background:C.grey[100],borderBottom:`1px solid ${C.grey[300]}`,display:"flex",alignItems:"center",padding:"0 24px"}}>
-        <span style={{fontSize:14,fontWeight:700,fontFamily:font,flexShrink:0,marginRight:16}}><span style={{color:C.grey[800]}}>hc</span><span style={{color:C.orange[400]}}>1</span><span style={{color:C.grey[800]}}> ClinicalIQ</span></span>
+        <button onClick={onBack} style={{display:"flex",alignItems:"center",gap:4,background:"transparent",border:"none",cursor:"pointer",fontFamily:font,fontSize:12,fontWeight:600,color:C.grey[600],marginRight:16}}>
+          <ChevronLeft size={14} strokeWidth={2.5} color={C.grey[500]}/>
+          Worklist
+        </button>
         <div style={{width:"0.5px",height:20,background:C.grey[300],marginRight:16}}/>
         <div style={{display:"flex",alignItems:"center",gap:4,background:C.grey[200],borderRadius:8,padding:4}}>
           <div style={{display:"flex",alignItems:"center",gap:5,padding:"5px 12px",borderRadius:6,opacity:0.5,cursor:"default"}}>
@@ -1434,19 +1415,225 @@ const PatientWorkspace = ({patient,allPatients,episodeId,onBack,onSelectPatient,
         <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:6}}><div style={{width:6,height:6,borderRadius:"50%",background:C.success[400],boxShadow:`0 0 6px ${C.success[400]}`}}/><span style={{fontSize:12,color:C.success[400],fontFamily:font}}>FHIR R4 Live</span></div>
       </div>
       <div style={{display:"flex",flex:1,overflow:"hidden"}}>
-        <MiniWorklist patients={allPatients.filter(p=>p.id===patient.id)} activeId={patient.id} onSelect={p=>{onSelectPatient(p);setZone("overview");setIqOpen(false);}} onBack={onBack}/>
         <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",minWidth:0}}>
-          <PatientHeader p={patient} onOpenIQ={()=>setIqOpen(o=>!o)}/>
+          <PatientHeader p={patient} episode={episode} onOpenIQ={()=>setIqOpen(o=>!o)}/>
           <ZoneTabs active={zone} onChange={setZone}/>
           <div style={{flex:1,display:"flex",overflow:"hidden",minHeight:0}}>
             <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",minWidth:0}}>
               {zone==="overview" && <OverviewZone p={patient} onNavigate={setZone}/>}
               {zone==="cp"       && <CarePlanZone p={patient}/>}
+              {zone==="visits"   && <VisitsZone p={patient} episode={episode}/>}
             </div>
             {iqOpen && <IQAssistantPanel p={patient} onClose={()=>setIqOpen(false)} expanded={iqExpanded} onToggleExpand={()=>setIqExpanded(e=>!e)}/>}
           </div>
         </div>
       </div>
+    </div>
+  );
+};
+
+// ── Visit Detail Modal (opens from Visits tab; returns without losing place) ──
+const VisitDetailModal = ({visit, episode, onClose}) => {
+  if (!visit) return null;
+  const isFuture = visit.status === "scheduled";
+  const isPast = visit.status === "completed";
+  const ga = episode ? gaAtVisit(episode, visit.date) : null;
+  const gaText = ga ? (ga.postpartum ? `${ga.weeks}w postpartum` : ga.label) : "—";
+
+  const Section = ({label, children}) => (
+    <div style={{marginBottom:14}}>
+      <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",color:C.grey[500],fontFamily:font,marginBottom:6}}>{label}</div>
+      {children}
+    </div>
+  );
+
+  return (
+    <div style={{position:"fixed",inset:0,zIndex:300,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.5)",backdropFilter:"blur(4px)"}} onClick={onClose}>
+      <div style={{width:560,maxHeight:"88vh",background:C.grey[100],borderRadius:16,display:"flex",flexDirection:"column",boxShadow:"0 24px 80px rgba(0,0,0,0.25)",overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
+
+        {/* Header */}
+        <div style={{padding:"16px 20px",borderBottom:`1px solid ${C.grey[300]}`,display:"flex",alignItems:"center",gap:12,flexShrink:0,background:"#fff"}}>
+          <div style={{width:36,height:36,borderRadius:10,background:isFuture?C.primary[100]:C.grey[200],display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+            {isFuture ? <CalendarDays size={18} color={C.primary[500]}/> : <CheckCircle2 size={18} color={C.success[400]}/>}
+          </div>
+          <div style={{flex:1}}>
+            <div style={{fontSize:16,fontWeight:700,color:C.grey[800],fontFamily:font,lineHeight:1.2}}>{visit.type}</div>
+            <div style={{fontSize:12,color:C.grey[600],fontFamily:font,marginTop:2}}>{formatDate(visit.date)} · {gaText} · {visit.provider}</div>
+          </div>
+          <span style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",color:isFuture?C.primary[500]:C.success[400],background:isFuture?C.primary[100]:C.success[100],borderRadius:4,padding:"3px 8px",fontFamily:font}}>{isFuture?"Scheduled":"Completed"}</span>
+          <button onClick={onClose} style={{width:32,height:32,borderRadius:8,background:C.grey[200],border:"none",color:C.grey[600],fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontFamily:font,lineHeight:1}}><X size={16}/></button>
+        </div>
+
+        {/* Body */}
+        <div style={{flex:1,overflowY:"auto",padding:"18px 20px",background:"#fff"}}>
+          <Section label="Location">
+            <div style={{display:"flex",alignItems:"center",gap:6,fontSize:13,color:C.grey[700],fontFamily:font}}>
+              <MapPin size={13} color={C.grey[500]}/>{visit.location}
+            </div>
+          </Section>
+
+          {visit.reason && (
+            <Section label="Reason / Purpose">
+              <div style={{fontSize:13,color:C.grey[700],fontFamily:font,lineHeight:1.5}}>{visit.reason}</div>
+            </Section>
+          )}
+
+          {visit.orders && visit.orders.length > 0 && (
+            <Section label={`Orders Requested (${visit.orders.length})`}>
+              <div style={{display:"flex",flexDirection:"column",gap:5}}>
+                {visit.orders.map((o,i) => (
+                  <div key={i} style={{display:"flex",alignItems:"center",gap:8,fontSize:13,color:C.grey[700],fontFamily:font,padding:"6px 10px",background:C.grey[200],borderRadius:6}}>
+                    <ClipboardList size={13} color={C.primary[500]} style={{flexShrink:0}}/>{o.label || o}
+                  </div>
+                ))}
+              </div>
+            </Section>
+          )}
+
+          {isPast && visit.results && visit.results.length > 0 && (
+            <Section label={`Results (${visit.results.length})`}>
+              <div style={{display:"flex",flexDirection:"column",gap:5}}>
+                {visit.results.map((r,i) => {
+                  const flagColor = r.flag==="critical"?C.error[400]:r.flag==="high"?C.orange[400]:r.flag==="low"?C.grey[600]:C.success[400];
+                  return (
+                    <div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",fontSize:13,fontFamily:font,padding:"6px 10px",background:C.grey[200],borderRadius:6}}>
+                      <span style={{color:C.grey[700]}}>{r.label}</span>
+                      <span style={{fontWeight:600,color:flagColor}}>{r.value} <span style={{fontSize:10,textTransform:"uppercase",fontWeight:700}}>{r.flag}</span></span>
+                    </div>
+                  );
+                })}
+              </div>
+            </Section>
+          )}
+
+          {visit.followUpReason && (
+            <Section label="Follow-up Reason">
+              <div style={{fontSize:13,color:C.grey[700],fontFamily:font,lineHeight:1.5}}>{visit.followUpReason}</div>
+            </Section>
+          )}
+
+          {visit.summary && (
+            <Section label="Summary">
+              <div style={{fontSize:13,color:C.grey[700],fontFamily:font,lineHeight:1.5,background:C.grey[200],borderRadius:8,padding:"10px 12px"}}>{visit.summary}</div>
+            </Section>
+          )}
+
+          {/* Stubbed Epic link */}
+          <div style={{marginTop:8}}>
+            <a href="#" onClick={e=>e.preventDefault()} style={{display:"inline-flex",alignItems:"center",gap:5,fontSize:12,fontWeight:600,color:C.primary[500],fontFamily:font,textDecoration:"none"}}>
+              <ExternalLink size={13}/> View in Epic
+            </a>
+          </div>
+
+          {/* Future visit stubbed actions */}
+          {isFuture && (
+            <div style={{marginTop:18,padding:"14px",background:C.grey[200],borderRadius:10,border:`1px dashed ${C.grey[400]}`}}>
+              <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",color:C.grey[500],fontFamily:font,marginBottom:10}}>Visit Actions</div>
+              <div style={{display:"flex",gap:8}}>
+                {["Reschedule","Cancel","Confirm"].map(action => (
+                  <button key={action} disabled style={{display:"flex",alignItems:"center",gap:5,background:C.grey[300],color:C.grey[500],border:"none",borderRadius:6,padding:"7px 14px",fontSize:12,fontWeight:600,cursor:"not-allowed",fontFamily:font,opacity:0.7}}>
+                    {action}
+                    <span style={{fontSize:9,fontWeight:400,fontStyle:"italic"}}>soon</span>
+                  </button>
+                ))}
+              </div>
+              <div style={{fontSize:11,color:C.grey[500],fontFamily:font,marginTop:8,fontStyle:"italic"}}>Write-back to Epic is coming soon — actions are not yet active in this prototype.</div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── Visits Zone — Next / Future / Past for the selected episode ────
+const VisitsZone = ({p, episode}) => {
+  const [selectedVisit, setSelectedVisit] = useState(null);
+  const ep = episode;
+  const allVisits = ep ? visitsForEpisode(ep.id) : [];
+  const nv = nextVisit(allVisits);
+  const future = futureVisits(allVisits);
+  const past = pastVisits(allVisits);
+
+  const SectionHeader = ({label, count, icon}) => (
+    <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:10}}>
+      {icon}
+      <span style={{fontSize:14,fontWeight:700,color:C.grey[800],fontFamily:font}}>{label}</span>
+      {count != null && <span style={{fontSize:11,color:C.grey[500],fontFamily:font,fontWeight:600}}>{count}</span>}
+    </div>
+  );
+
+  const VisitRow = ({v, isNext=false}) => {
+    const ga = ep ? gaAtVisit(ep, v.date) : null;
+    const gaText = ga ? (ga.postpartum ? `${ga.weeks}w PP` : ga.label) : "";
+    const isPastVisit = v.status === "completed";
+    return (
+      <div onClick={()=>setSelectedVisit(v)} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:isNext?C.primary[100]:"#fff",border:`1px solid ${isNext?C.primary[300]:C.grey[300]}`,borderRadius:isNext?10:8,cursor:"pointer",transition:"box-shadow 0.12s",marginBottom:isNext?0:6}}
+        onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 2px 8px rgba(0,0,0,0.08)";}}
+        onMouseLeave={e=>{e.currentTarget.style.boxShadow="none";}}>
+        {isNext && <div style={{width:4,alignSelf:"stretch",background:C.primary[500],borderRadius:2,flexShrink:0}}/>}
+        <div style={{flexShrink:0,minWidth:110}}>
+          <div style={{fontSize:13,fontWeight:700,color:isNext?C.primary[600]:C.grey[800],fontFamily:font}}>{formatDate(v.date)}</div>
+          {isPastVisit && gaText && <div style={{fontSize:11,color:C.grey[500],fontFamily:font,marginTop:2}}>{gaText}</div>}
+        </div>
+        <div style={{width:"1px",alignSelf:"stretch",background:C.grey[300],flexShrink:0}}/>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2}}>
+            <span style={{fontSize:13,fontWeight:600,color:C.secondary[500],fontFamily:font}}>{v.type}</span>
+            {isNext && <span style={{fontSize:9,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",color:C.primary[500],background:C.primary[100],borderRadius:3,padding:"1px 5px",fontFamily:font}}>Next</span>}
+          </div>
+          <div style={{fontSize:12,color:C.grey[600],fontFamily:font,lineHeight:1.4,marginBottom:2}}>{visitOneLiner(v)}</div>
+          <div style={{display:"flex",alignItems:"center",gap:8,fontSize:11,color:C.grey[500],fontFamily:font}}>
+            <span style={{display:"flex",alignItems:"center",gap:3}}><User size={10}/>{v.provider}</span>
+            <span style={{display:"flex",alignItems:"center",gap:3}}><MapPin size={10}/>{v.location}</span>
+          </div>
+        </div>
+        <ChevronDown size={14} color={C.grey[400]} style={{transform:"rotate(-90deg)",flexShrink:0}}/>
+      </div>
+    );
+  };
+
+  return (
+    <div style={{flex:1,overflowY:"auto",padding:"16px 20px",display:"flex",flexDirection:"column",gap:18}}>
+
+      {/* NEXT VISIT */}
+      <div>
+        <SectionHeader label="Next Visit" icon={<Clock size={15} color={C.primary[500]}/>}/>
+        {nv ? (
+          <VisitRow v={nv} isNext={true}/>
+        ) : (
+          <div style={{padding:"14px 16px",background:C.orange[100],border:`1px solid ${C.orange[400]}55`,borderRadius:8,display:"flex",alignItems:"center",gap:8}}>
+            <AlertCircle size={15} color={C.orange[400]}/>
+            <span style={{fontSize:13,fontWeight:600,color:C.orange[400],fontFamily:font}}>No upcoming visit — scheduling gap to chase</span>
+          </div>
+        )}
+      </div>
+
+      {/* FUTURE VISITS */}
+      <div>
+        <SectionHeader label="Future Visits" count={future.length} icon={<CalendarDays size={15} color={C.secondary[500]}/>}/>
+        {future.length === 0 ? (
+          <div style={{padding:"14px 16px",background:C.grey[200],border:`1px solid ${C.grey[300]}`,borderRadius:8,fontSize:13,color:C.grey[500],fontFamily:font}}>No upcoming visits</div>
+        ) : (
+          <div style={{display:"flex",flexDirection:"column",gap:6}}>
+            {future.map(v => <VisitRow key={v.id} v={v}/>)}
+          </div>
+        )}
+      </div>
+
+      {/* PAST VISITS */}
+      <div>
+        <SectionHeader label="Past Visits" count={past.length} icon={<CheckCircle2 size={15} color={C.success[400]}/>}/>
+        {past.length === 0 ? (
+          <div style={{padding:"14px 16px",background:C.grey[200],border:`1px solid ${C.grey[300]}`,borderRadius:8,fontSize:13,color:C.grey[500],fontFamily:font}}>No past visits</div>
+        ) : (
+          <div style={{display:"flex",flexDirection:"column",gap:6}}>
+            {past.map(v => <VisitRow key={v.id} v={v}/>)}
+          </div>
+        )}
+      </div>
+
+      {selectedVisit && <VisitDetailModal visit={selectedVisit} episode={ep} onClose={()=>setSelectedVisit(null)}/>}
     </div>
   );
 };
@@ -1468,9 +1655,9 @@ const PatientRow = ({p, onOpen, onOpenACOG}) => {
           <span style={{fontSize:12,color:C.grey[700],fontFamily:font,display:"block",marginBottom:2}}><strong style={{fontWeight:700}}>EDD</strong> {formatDate(ep?ep.edd:p.edd)}</span>
           <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
             <span style={{fontSize:10,fontWeight:600,color:C.grey[700],background:C.grey[200],border:`1px solid ${C.grey[300]}`,borderRadius:4,padding:"2px 6px",fontFamily:font}}>{ep?ep.parityLabel:p.parity}</span>
-            <span style={{fontSize:10,fontWeight:600,color:C.grey[700],background:C.grey[200],border:`1px solid ${C.grey[300]}`,borderRadius:4,padding:"2px 6px",fontFamily:font}}>{ep?`${ep.ga.weeks}W`:p.gestAge.replace(" wks","W")}</span>
+            <span style={{fontSize:10,fontWeight:600,color:C.grey[700],background:C.grey[200],border:`1px solid ${C.grey[300]}`,borderRadius:4,padding:"2px 6px",fontFamily:font}}>{ep?ep.gaLabel:p.gestAge.replace(" wks","W")}</span>
             <span style={{fontSize:10,fontWeight:600,color:C.grey[700],background:C.grey[200],border:`1px solid ${C.grey[300]}`,borderRadius:4,padding:"2px 6px",fontFamily:font}}>{ep?ep.obType:p.caseType}</span>
-            {ep && ep.status==="postpartum" && <span style={{fontSize:10,fontWeight:600,color:C.secondary[500],background:C.secondary[100],border:`1px solid ${C.secondary[300]}`,borderRadius:4,padding:"2px 6px",fontFamily:font}}>Postpartum</span>}
+            {ep && ep.status==="postpartum" && ep.obType!=="Postpartum" && <span style={{fontSize:10,fontWeight:600,color:C.secondary[500],background:C.secondary[100],border:`1px solid ${C.secondary[300]}`,borderRadius:4,padding:"2px 6px",fontFamily:font}}>Postpartum</span>}
           </div>
         </td>
 
