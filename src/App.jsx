@@ -221,7 +221,9 @@ const calcMHR = (p) => {
   return {score,color:ti.color,cat:ti.label,tier:ti.tier,interp:ti.interp,domains,maxPossible:74,activeDomains,drivers,modifiableDrivers,nonModifiableDrivers,missing,calcComplete:missing.length===0};
 };
 
-// ── Patient data — 6 patients covering Critical / High / Low severity ──
+// ── Patient data — 7 patients covering Critical / High / Low severity ──
+const FACILITIES = ["North Aux Hospital", "Main Hospital"];
+
 const PATIENTS = [
   // CRITICAL — HGB < 8, many ACOG conditions
   { id:"MR-7821", name:"Maria Rodriguez", age:34, dob:"03/15/1992", sex:"Female", weight:"68 kg", bmi:"24.2", npi:"1122334455", domain:"OB Anemia", caseType:"OB Surgical",
@@ -232,7 +234,7 @@ const PATIENTS = [
     conditions:["Multiple Gestations","Hypertension","Iron Deficiency Anemia","Gestational Diabetes"],
     bp:"142/91",
     order:"IV Iron – Ferric Carboxymaltose 1000mg STAT + MFM consult",
-    provider:"Dr. Chen", providerRole:"OB/GYN", unit:"OB High Risk", admitDate:"Apr 5, 2026",
+    provider:"Dr. Chen", facility:"North Aux Hospital", providerRole:"OB/GYN", unit:"OB High Risk", admitDate:"Apr 5, 2026",
     severity:"Critical", carePlanStatus:"pending", aiConfidence:94,
     diagnosis:"OB Iron Deficiency Anemia — Severe, ACOG PB #233",
     icdCodes:["O99.011","D50.0","O30.C30","I10"], allergies:["NKDA"],
@@ -249,7 +251,7 @@ const PATIENTS = [
     conditions:["Multiple Gestations","Preterm Labor Risk","Placenta Previa","Severe Iron Deficiency"],
     bp:"118/76",
     order:"IV Iron – Ferumoxytol 510mg x2 + High-risk monitoring",
-    provider:"Dr. Patel", providerRole:"MFM", unit:"OB High Risk", admitDate:"Apr 7, 2026",
+    provider:"Dr. Patel", facility:"North Aux Hospital", providerRole:"MFM", unit:"OB High Risk", admitDate:"Apr 7, 2026",
     severity:"Critical", carePlanStatus:"in-progress", aiConfidence:91,
     diagnosis:"OB Severe Iron Deficiency Anemia — Placenta Previa Risk",
     icdCodes:["O99.011","D50.0","O09.21","O44.0"], allergies:["Sulfa"],
@@ -266,7 +268,7 @@ const PATIENTS = [
     conditions:["Gestational Iron Deficiency Anemia","Hypothyroidism"],
     bp:"115/72",
     order:"IV Iron – Ferric Carboxymaltose 750mg + Thyroid monitoring",
-    provider:"Dr. Nguyen", providerRole:"OB/GYN", unit:"OB Outpatient", admitDate:"Apr 8, 2026",
+    provider:"Dr. Nguyen", facility:"North Aux Hospital", providerRole:"OB/GYN", unit:"OB Outpatient", admitDate:"Apr 8, 2026",
     severity:"High", carePlanStatus:"generated", aiConfidence:87,
     diagnosis:"Gestational Iron Deficiency Anemia — Thyroid Comorbidity",
     icdCodes:["O99.011","D50.9","O99.28"], allergies:["NKDA"],
@@ -283,7 +285,7 @@ const PATIENTS = [
     conditions:["Hypertension","Anemia of Pregnancy","Obesity","Multiparity"],
     bp:"138/88",
     order:"IV Iron – Ferric Carboxymaltose 750mg + Nephrology consult",
-    provider:"Dr. Kim", providerRole:"MFM", unit:"OB Outpatient", admitDate:"Apr 6, 2026",
+    provider:"Dr. Kim", facility:"North Aux Hospital", providerRole:"MFM", unit:"OB Outpatient", admitDate:"Apr 6, 2026",
     severity:"High", carePlanStatus:"pending", aiConfidence:83,
     diagnosis:"OB Anemia — Mixed Iron Deficiency, Obesity & Hypertension",
     icdCodes:["O99.011","D63.1","O10.02","E66"], allergies:["Penicillin"],
@@ -300,7 +302,7 @@ const PATIENTS = [
     conditions:["Mild Gestational Anemia","Mental Health Support"],
     bp:"110/68",
     order:"Oral Iron – Ferrous Sulfate 325mg BID + Mental health referral",
-    provider:"Dr. Williams", providerRole:"OB/GYN", unit:"OB Outpatient", admitDate:"Apr 9, 2026",
+    provider:"Dr. Williams", facility:"North Aux Hospital", providerRole:"OB/GYN", unit:"OB Outpatient", admitDate:"Apr 9, 2026",
     severity:"Low", carePlanStatus:"generated", aiConfidence:82,
     diagnosis:"Mild Gestational Anemia — Iron Supplementation",
     icdCodes:["O99.011","D50.9"], allergies:["NKDA"],
@@ -317,13 +319,25 @@ const PATIENTS = [
     conditions:["Cardiac Disease","Hypothyroidism","Advanced Maternal Age"],
     bp:"128/82",
     order:"Oral Iron – Ferrous Gluconate 300mg + Cardiology co-management",
-    provider:"Dr. Osei", providerRole:"MFM", unit:"OB Cardiac Clinic", admitDate:"Apr 8, 2026",
+    provider:"Dr. Osei", facility:"North Aux Hospital", providerRole:"MFM", unit:"OB Cardiac Clinic", admitDate:"Apr 8, 2026",
     severity:"Low", carePlanStatus:"in-progress", aiConfidence:78,
     diagnosis:"Borderline Anemia — Cardiac Co-management Required",
     icdCodes:["O99.011","D50.9","O99.41","O99.28"], allergies:["Aspirin"],
     medications:["Prenatal vitamins","Levothyroxine 100mcg daily","Heparin 5000u SQ BID"],
     hedis:[{name:"Prenatal & Postpartum Care (PPC)",st:"Open",close:true},{name:"Controlling High Blood Pressure (CBP)",st:"Closed",close:false},{name:"Comprehensive Diabetes Care (CDC)",st:"Closed",close:false},{name:"Depression Screening & Follow-up (DSF)",st:"Closed",close:false}],
     star:3.6, starP:3.8 },
+
+  // LOW — no active care recommendation generated
+  { id:"NB-7742", name:"Nora Bennett", age:30, dob:"12/02/1995", sex:"Female", weight:"66 kg", bmi:"23.7", npi:"1122334461", domain:"OB Anemia", caseType:"Postpartum",
+    gestAge:"16 wks", edd:"09/23/2026", followUpDate:"05/01/2026", parity:"G2P1", redoOrNonIsolated:false, significantComorbidities:false, anticoagulants:false,
+    labs:[{label:"HGB",value:"13",unit:"g/dL",status:"normal",draws:[{date:"Apr 8",value:13},{date:"Apr 10",value:13}]},{label:"Ferritin",value:"Missing",unit:"ng/mL",status:"missing"},{label:"TIBC",value:"292",unit:"mcg/dL",status:"low"},{label:"Transferrin Sat",value:"26",unit:"%",status:"low"},{label:"Reticulocytes",value:"1.7",unit:"%",status:"low"},{label:"WBC",value:"7.8",unit:"K/uL",status:"low"},{label:"Platelets",value:"248",unit:"K/uL",status:"low"},{label:"Creatinine",value:"0.7",unit:"mg/dL",status:"low"}],
+    mhr:{placental:null,priorPPH:false,uterinePathology:false,priorCesareanCount:0,plannedCesarean:false,multipleGestation:null,grandMultiparity:false,priorUterineSurgery:false,hypertensiveDisorder:null,cardiacDisease:false,renalDisease:false,liverDisease:false,hematologicDisease:false,bleedingDisorder:false,pregestationalDiabetes:false,gestationalDiabetes:false,anticoagulationStatus:"none",antiplateletAgent:null,pt:12,inr:1.0,fibrinogen:330},
+    comorbidities:[], conditions:["Routine Prenatal Monitoring"], bp:"116/72",
+    order:"", activeRecommendation:null, provider:"Dr. Rivera", facility:"Main Hospital", providerRole:"OB/GYN", unit:"OB Outpatient", admitDate:"Apr 10, 2026",
+    severity:"Low", carePlanStatus:"generated", aiConfidence:80,
+    diagnosis:"No Active Care Recommendation — Routine Monitoring", icdCodes:["Z34.82"], allergies:["NKDA"], medications:["Prenatal vitamins"],
+    hedis:[{name:"Prenatal & Postpartum Care (PPC)",st:"Open",close:true},{name:"Controlling High Blood Pressure (CBP)",st:"Closed",close:false},{name:"Comprehensive Diabetes Care (CDC)",st:"Closed",close:false},{name:"Depression Screening & Follow-up (DSF)",st:"Open",close:true}],
+    star:4.0, starP:4.2 },
 ];
 PATIENTS.forEach(p => { p._mhr = calcMHR(p); });
 
@@ -673,14 +687,24 @@ const OverviewZone = ({p, onNavigate}) => {
           </div>
           <div style={{padding:"14px 18px"}}>
             <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",color:C.grey[500],fontFamily:font,marginBottom:6}}>Active Order</div>
-            {p.carePlanStatus==="pending"
-              ? <div style={{display:"flex",alignItems:"center",gap:4}}><div style={{width:5,height:5,borderRadius:"50%",background:C.error[400],flexShrink:0}}/><span style={{fontSize:14,color:C.error[400],fontFamily:font,fontWeight:600}}>Care Recommendation Not Started</span></div>
-              : <div style={{fontSize:14,fontWeight:600,color:C.grey[800],fontFamily:font,lineHeight:1.5}}>{p.order}</div>}
+            {p.activeRecommendation===null
+              ? <div style={{display:"flex",alignItems:"center",gap:4}}><div style={{width:5,height:5,borderRadius:"50%",background:C.grey[500],flexShrink:0}}/><span style={{fontSize:14,color:C.grey[600],fontFamily:font,fontWeight:600}}>No Active Recommendation</span></div>
+              : p.carePlanStatus==="pending"
+                ? <div style={{display:"flex",alignItems:"center",gap:4}}><div style={{width:5,height:5,borderRadius:"50%",background:C.error[400],flexShrink:0}}/><span style={{fontSize:14,color:C.error[400],fontFamily:font,fontWeight:600}}>Care Recommendation Not Started</span></div>
+                : <div style={{fontSize:14,fontWeight:600,color:C.grey[800],fontFamily:font,lineHeight:1.5}}>{p.order}</div>}
           </div>
         </div>
       </div>
 
       {/* AI Insight + Care Plan — merged */}
+      {p.activeRecommendation===null ? (
+        <div style={{borderRadius:12,overflow:"hidden",background:"#fff",border:`1px solid ${C.grey[300]}`,boxShadow:"0 1px 4px rgba(0,0,0,0.04)"}}>
+          <div style={{padding:"13px 18px",borderBottom:`1px solid ${C.grey[300]}`,display:"flex",alignItems:"center",gap:10}}>
+            <span style={{fontSize:14,color:C.grey[500]}}>AI Insight</span>
+          </div>
+          <div style={{padding:"20px 18px",fontSize:14,color:C.grey[600],fontFamily:font}}>No AI Insight Recommendations</div>
+        </div>
+      ) : (
       <div style={{borderRadius:12,overflow:"hidden",background:"#fff",boxShadow:"0 2px 12px rgba(0,0,0,0.08)"}}>
         {/* Gradient header */}
         <div style={{background:`linear-gradient(135deg,${C.primary[600]},${C.primary[500]},${C.secondary[600]})`,padding:"13px 18px",display:"flex",alignItems:"center",gap:10,position:"relative",overflow:"hidden"}}>
@@ -724,6 +748,7 @@ const OverviewZone = ({p, onNavigate}) => {
           </div>
         </div>
       </div>
+      )}
 
       {/* Evidence Base */}
       <div style={{background:C.success[100],border:"1px solid rgba(56,128,50,0.2)",borderRadius:12,padding:"14px 18px"}}>
@@ -1364,7 +1389,7 @@ const MiniWorklist = ({patients,activeId,onSelect,onBack}) => (
     <div style={{flex:1,overflowY:"auto",minHeight:0}}>
       {patients.map(p => {
         const a = p.id===activeId;
-        const cpC = p.carePlanStatus==="generated"?C.success[400]:p.carePlanStatus==="in-progress"?C.orange[400]:p.carePlanStatus==="pending"?C.error[400]:C.grey[400];
+        const cpC = p.activeRecommendation===null ? C.grey[500] : p.carePlanStatus==="generated"?C.success[400]:p.carePlanStatus==="in-progress"?C.orange[400]:p.carePlanStatus==="pending"?C.error[400]:C.grey[400];
         return (
           <div key={p.id} onClick={()=>onSelect(p)} style={{padding:"12px 16px",borderBottom:`1px solid ${C.grey[300]}`,borderLeft:`3px solid ${a?C.primary[500]:"transparent"}`,background:a?C.primary[100]:"transparent",cursor:"pointer",transition:"background 0.12s"}}
             onMouseEnter={e=>{if(!a)e.currentTarget.style.background=C.grey[200];}}
@@ -1376,7 +1401,7 @@ const MiniWorklist = ({patients,activeId,onSelect,onBack}) => (
               <span style={{fontSize:10,fontWeight:600,color:C.grey[700],background:C.grey[200],border:`1px solid ${C.grey[300]}`,borderRadius:4,padding:"1px 6px",fontFamily:font}}>{p.gestAge.replace(" wks","W")}</span>
               <span style={{fontSize:10,fontWeight:600,color:C.grey[700],background:C.grey[200],border:`1px solid ${C.grey[300]}`,borderRadius:4,padding:"1px 6px",fontFamily:font}}>{p.caseType}</span>
             </div>
-            <div style={{display:"flex",alignItems:"center",gap:4}}><div style={{width:5,height:5,borderRadius:"50%",background:cpC,flexShrink:0}}/><span style={{fontSize:14,color:cpC,fontFamily:font,fontWeight:600}}>{p.carePlanStatus==="generated"?"Care Recommendation Generated":p.carePlanStatus==="in-progress"?"Care Recommendation In Progress":"Care Recommendation Not Started"}</span></div>
+            <div style={{display:"flex",alignItems:"center",gap:4}}><div style={{width:5,height:5,borderRadius:"50%",background:cpC,flexShrink:0}}/><span style={{fontSize:14,color:cpC,fontFamily:font,fontWeight:600}}>{p.activeRecommendation===null?"No Active Recommendation":p.carePlanStatus==="generated"?"Care Recommendation Generated":p.carePlanStatus==="in-progress"?"Care Recommendation In Progress":"Care Recommendation Not Started"}</span></div>
           </div>
         );
       })}
@@ -1484,8 +1509,8 @@ const PatientRow = ({p, onOpen, onOpenACOG}) => {
 
         {/* ACTIVE ORDER */}
         <td style={{padding:"12px 16px",minWidth:180}}>
-          {(() => {const cpC=p.carePlanStatus==="generated"?C.success[400]:p.carePlanStatus==="in-progress"?C.orange[400]:p.carePlanStatus==="pending"?C.error[400]:C.grey[400];const cpL=p.carePlanStatus==="generated"?"Care Recommendation Generated":p.carePlanStatus==="in-progress"?"Care Recommendation In Progress":p.carePlanStatus==="pending"?"Care Recommendation Not Started":"";return cpL? <div style={{display:"flex",alignItems:"center",gap:4,marginBottom:4}}><div style={{width:5,height:5,borderRadius:"50%",background:cpC,flexShrink:0}}/><span style={{fontSize:14,color:cpC,fontFamily:font,fontWeight:600}}>{cpL}</span></div>:null;})()}
-          {p.carePlanStatus!=="pending" && <span style={{fontSize:12,color:C.grey[700],fontFamily:font,lineHeight:1.4}}>{p.order}</span>}
+          {(() => {const cpC=p.activeRecommendation===null?C.grey[500]:p.carePlanStatus==="generated"?C.success[400]:p.carePlanStatus==="in-progress"?C.orange[400]:p.carePlanStatus==="pending"?C.error[400]:C.grey[400];const cpL=p.activeRecommendation===null?"No Active Recommendation":p.carePlanStatus==="generated"?"Care Recommendation Generated":p.carePlanStatus==="in-progress"?"Care Recommendation In Progress":p.carePlanStatus==="pending"?"Care Recommendation Not Started":"";return cpL? <div style={{display:"flex",alignItems:"center",gap:4,marginBottom:4}}><div style={{width:5,height:5,borderRadius:"50%",background:cpC,flexShrink:0}}/><span style={{fontSize:14,color:cpC,fontFamily:font,fontWeight:600}}>{cpL}</span></div>:null;})()}
+          {p.activeRecommendation!==null && p.carePlanStatus!=="pending" && <span style={{fontSize:12,color:C.grey[700],fontFamily:font,lineHeight:1.4}}>{p.order}</span>}
         </td>
 
         {/* PROVIDER */}
@@ -1504,14 +1529,21 @@ export default function App() {
   const [activePatient, setActivePatient] = useState(null);
   const [defaultZone, setDefaultZone]     = useState("overview");
   const [acogPatient, setAcogPatient]     = useState(null);
+  const [facilityFilter, setFacilityFilter] = useState([...FACILITIES]);
   const [search, setSearch]        = useState("");
   const [ctFilter, setCtFilter]    = useState("All Case Types");
   const [sevFilter, setSevFilter]  = useState("All Severity");
   const [statusFilter, setStatusFilter] = useState("Active");
-  const [dateFilter, setDateFilter] = useState("All Severity");
+  const [sortFilter, setSortFilter] = useState("All Severity");
+  const [dateFilter, setDateFilter] = useState("Visit Date");
+  const [sortBy, setSortBy] = useState("Severity");
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
-  const DATE_OPTIONS = ["All Severity","Low","Intermediate","High","Very High","EDD","Visit Date","Custom Date Range"];
+  const [facilityMenuOpen, setFacilityMenuOpen] = useState(false);
+  const SORT_OPTIONS = ["All Severity","Low","Intermediate","High","Very High"];
+  const DATE_FILTER_OPTIONS = ["Visit Date","EDD","Custom Date Range"];
+  const SORT_BY_OPTIONS = ["Visit Date","Severity"];
+  const SEVERITY_RANK = {"Low":1,"Intermediate":2,"High":3,"Very High":4};
   const STATUS_OPTIONS = ["ALL","Active","In Progress","Not Started","Generated","Follow Up","Complete","Inactive","Cancelled"];
   const statusMap = {"Active":"active","In Progress":"in-progress","Not Started":"pending","Generated":"generated","Follow Up":"follow-up","Complete":"complete","Inactive":"inactive","Cancelled":"cancelled"};
   const parseDate = (value) => value.includes("-")
@@ -1527,15 +1559,16 @@ export default function App() {
 
   const COLS = ["PATIENT / GA","LAB VALUES","BLOOD PRESSURE","MATERNAL HEALTH RISK","ACTIVE ORDER","PROVIDER"];
   const filtered = PATIENTS.filter(p => {
-    return (!search || p.name.toLowerCase().includes(search.toLowerCase()) || p.id.toLowerCase().includes(search.toLowerCase()) || p.provider.toLowerCase().includes(search.toLowerCase()))
+    return facilityFilter.includes(p.facility)
+      && (!search || p.name.toLowerCase().includes(search.toLowerCase()) || p.id.toLowerCase().includes(search.toLowerCase()) || p.provider.toLowerCase().includes(search.toLowerCase()))
       && (ctFilter==="All Case Types" || p.caseType===ctFilter)
       && (statusFilter==="ALL" || p.carePlanStatus===statusMap[statusFilter] || (statusFilter==="Active" && (p.carePlanStatus==="in-progress"||p.carePlanStatus==="generated")))
-      && (!["Low","Intermediate","High","Very High"].includes(dateFilter) || p._mhr.cat===dateFilter)
-      && (dateFilter!=="Custom Date Range" || (!customStart || parseDate(p.edd) >= parseDate(customStart)) && (!customEnd || parseDate(p.edd) <= parseDate(customEnd)));
+      && (!["Low","Intermediate","High","Very High"].includes(sortFilter) || p._mhr.cat===sortFilter)
+      && (dateFilter==="EDD" || dateFilter==="Visit Date" || (!customStart || parseDate(p.edd) >= parseDate(customStart)) && (!customEnd || parseDate(p.edd) <= parseDate(customEnd)));
   });
-  const displayedPatients = ["EDD","Visit Date"].includes(dateFilter)
-    ? [...filtered].sort((a,b) => parseDate(dateFilter==="Visit Date" ? a.followUpDate : a.edd) - parseDate(dateFilter==="Visit Date" ? b.followUpDate : b.edd))
-    : filtered;
+  const displayedPatients = sortBy==="Severity"
+    ? [...filtered].sort((a,b) => (SEVERITY_RANK[b._mhr.cat]||0) - (SEVERITY_RANK[a._mhr.cat]||0))
+    : [...filtered].sort((a,b) => parseDate(a.followUpDate) - parseDate(b.followUpDate));
 
   return (
     <><GlobalReset/><div style={{display:"flex",flexDirection:"column",height:"100dvh",overflow:"hidden",fontFamily:font,background:C.grey[200]}}>
@@ -1561,18 +1594,38 @@ export default function App() {
         <div style={{background:C.grey[100],borderRadius:12,border:`1px solid ${C.grey[300]}`,boxShadow:"0 1px 8px rgba(0,0,0,0.06)",overflow:"hidden",display:"flex",flexDirection:"column",flex:1,minHeight:0}}>
           {/* Search + filters */}
           <div style={{padding:"12px 20px",borderBottom:`1px solid ${C.grey[300]}`,display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
+            <div style={{position:"relative",display:"flex",alignItems:"center"}}>
+              <label style={{position:"absolute",top:-7,left:9,padding:"0 4px",background:C.grey[100],fontSize:10,color:C.grey[600],fontFamily:font,lineHeight:1,zIndex:2}}>Facility *</label>
+              <button type="button" onClick={()=>setFacilityMenuOpen(open=>!open)} aria-expanded={facilityMenuOpen} aria-haspopup="listbox" style={{appearance:"none",textAlign:"left",padding:"8px 30px 8px 12px",border:`1px solid ${C.grey[400]}`,borderRadius:4,fontSize:12,color:C.grey[800],background:C.grey[100],cursor:"pointer",outline:"none",fontFamily:font,minWidth:190,position:"relative",maxWidth:240,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+                {facilityFilter.length===FACILITIES.length ? "ALL" : facilityFilter.length===0 ? "No Facilities" : facilityFilter.join(", ")}
+                <ChevronDown size={10} color={C.grey[500]} style={{position:"absolute",right:9,top:"50%",transform:"translateY(-50%)",pointerEvents:"none"}}/>
+              </button>
+              {facilityMenuOpen && <div role="listbox" aria-label="Facility options" style={{position:"absolute",top:"calc(100% + 4px)",left:0,zIndex:20,width:220,padding:"6px 0",background:C.grey[100],border:`1px solid ${C.grey[300]}`,borderRadius:6,boxShadow:"0 8px 24px rgba(0,0,0,0.14)"}}>
+                <button type="button" onClick={()=>setFacilityFilter(facilityFilter.length===FACILITIES.length ? [] : [...FACILITIES])} style={{width:"100%",display:"flex",alignItems:"center",gap:8,padding:"8px 12px",border:0,background:"transparent",color:C.grey[700],fontSize:12,textAlign:"left",cursor:"pointer",fontFamily:font}}>
+                  <span style={{width:16,height:16,display:"inline-flex",alignItems:"center",justifyContent:"center",border:`1px solid ${facilityFilter.length===FACILITIES.length ? C.primary[500] : C.grey[400]}`,borderRadius:3,background:facilityFilter.length===FACILITIES.length ? C.primary[500] : C.grey[100],color:"#fff",fontSize:11,fontWeight:700}}>{facilityFilter.length===FACILITIES.length ? "✓" : ""}</span>
+                  Select All
+                </button>
+                <div style={{height:1,background:C.grey[300],margin:"2px 0"}}/>
+                {FACILITIES.map(f=><button key={f} type="button" role="option" aria-selected={facilityFilter.includes(f)} onClick={()=>setFacilityFilter(current=>current.includes(f) ? current.filter(selected=>selected!==f) : [...current,f])} style={{width:"100%",display:"flex",alignItems:"center",gap:8,padding:"8px 12px",border:0,background:"transparent",color:C.grey[800],fontSize:12,textAlign:"left",cursor:"pointer",fontFamily:font}}>
+                  <span style={{width:16,height:16,display:"inline-flex",alignItems:"center",justifyContent:"center",border:`1px solid ${facilityFilter.includes(f) ? C.primary[500] : C.grey[400]}`,borderRadius:3,background:facilityFilter.includes(f) ? C.primary[500] : C.grey[100],color:"#fff",fontSize:11,fontWeight:700}}>{facilityFilter.includes(f) ? "✓" : ""}</span>
+                  {f}
+                </button>)}
+              </div>}
+            </div>
             <div style={{position:"relative",width:260}}>
-              <Search size={13} color={C.grey[500]} style={{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)",pointerEvents:"none"}}/>
-              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search patients, MRN, provider..." style={{width:"100%",boxSizing:"border-box",padding:"7px 10px 7px 30px",border:`1px solid ${C.grey[300]}`,borderRadius:8,fontSize:12,color:C.grey[800],background:C.grey[100],outline:"none",fontFamily:font}}/>
+              <label style={{position:"absolute",top:-7,left:9,padding:"0 4px",background:C.grey[100],fontSize:10,color:C.grey[600],fontFamily:font,lineHeight:1,zIndex:1}}>Search *</label>
+              <Search size={13} color={C.grey[500]} style={{position:"absolute",left:10,bottom:9,pointerEvents:"none"}}/>
+              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search patients, MRN, provider..." style={{width:"100%",boxSizing:"border-box",padding:"7px 10px 7px 30px",border:`1px solid ${C.grey[400]}`,borderRadius:4,fontSize:12,color:C.grey[800],background:C.grey[100],outline:"none",fontFamily:font}}/>
             </div>
             <div style={{flex:1}}/>
             <Filter size={13} color={C.grey[500]}/><span style={{fontSize:12,color:C.grey[500],fontFamily:font}}>Filter by:</span>
             {[{v:ctFilter,s:setCtFilter,o:CASE_TYPES}].map((dd,i) => (
-              <div key={i} style={{position:"relative"}}>
-                <select value={dd.v} onChange={e=>dd.s(e.target.value)} style={{appearance:"none",padding:"6px 26px 6px 10px",border:`1px solid ${C.grey[300]}`,borderRadius:8,fontSize:12,color:C.grey[700],background:C.grey[100],cursor:"pointer",outline:"none",fontFamily:font}}>
+              <div key={i} style={{position:"relative",display:"flex",alignItems:"center"}}>
+                <label style={{position:"absolute",top:-7,left:9,padding:"0 4px",background:C.grey[100],fontSize:10,color:C.grey[600],fontFamily:font,lineHeight:1}}>Case Type *</label>
+                <select value={dd.v} onChange={e=>dd.s(e.target.value)} style={{appearance:"none",padding:"8px 28px 8px 12px",border:`1px solid ${C.grey[400]}`,borderRadius:4,fontSize:12,color:C.grey[800],background:C.grey[100],cursor:"pointer",outline:"none",fontFamily:font,minWidth:150}}>
                   {dd.o.map(o=><option key={o}>{o}</option>)}
                 </select>
-                <ChevronDown size={10} color={C.grey[500]} style={{position:"absolute",right:7,top:"50%",transform:"translateY(-50%)",pointerEvents:"none"}}/>
+                <ChevronDown size={10} color={C.grey[500]} style={{position:"absolute",right:9,top:"50%",transform:"translateY(-50%)",pointerEvents:"none"}}/>
               </div>
             ))}
             <div style={{position:"relative",display:"flex",alignItems:"center"}}>
@@ -1583,9 +1636,23 @@ export default function App() {
               <ChevronDown size={10} color={C.grey[500]} style={{position:"absolute",right:9,top:"50%",transform:"translateY(-50%)",pointerEvents:"none"}}/>
             </div>
             <div style={{position:"relative",display:"flex",alignItems:"center"}}>
+              <label style={{position:"absolute",top:-7,left:9,padding:"0 4px",background:C.grey[100],fontSize:10,color:C.grey[600],fontFamily:font,lineHeight:1}}>Severity *</label>
+              <select value={sortFilter} onChange={e=>setSortFilter(e.target.value)} style={{appearance:"none",padding:"8px 28px 8px 12px",border:`1px solid ${C.grey[400]}`,borderRadius:4,fontSize:12,color:C.grey[800],background:C.grey[100],cursor:"pointer",outline:"none",fontFamily:font,minWidth:150}}>
+                {SORT_OPTIONS.map(o=><option key={o}>{o}</option>)}
+              </select>
+              <ChevronDown size={10} color={C.grey[500]} style={{position:"absolute",right:9,top:"50%",transform:"translateY(-50%)",pointerEvents:"none"}}/>
+            </div>
+            <div style={{position:"relative",display:"flex",alignItems:"center"}}>
+              <label style={{position:"absolute",top:-7,left:9,padding:"0 4px",background:C.grey[100],fontSize:10,color:C.grey[600],fontFamily:font,lineHeight:1}}>Date *</label>
+              <select value={dateFilter} onChange={e=>setDateFilter(e.target.value)} style={{appearance:"none",padding:"8px 28px 8px 12px",border:`1px solid ${C.grey[400]}`,borderRadius:4,fontSize:12,color:C.grey[800],background:C.grey[100],cursor:"pointer",outline:"none",fontFamily:font,minWidth:150}}>
+                {DATE_FILTER_OPTIONS.map(o=><option key={o}>{o}</option>)}
+              </select>
+              <ChevronDown size={10} color={C.grey[500]} style={{position:"absolute",right:9,top:"50%",transform:"translateY(-50%)",pointerEvents:"none"}}/>
+            </div>
+            <div style={{position:"relative",display:"flex",alignItems:"center"}}>
               <label style={{position:"absolute",top:-7,left:9,padding:"0 4px",background:C.grey[100],fontSize:10,color:C.grey[600],fontFamily:font,lineHeight:1}}>Sort By *</label>
-              <select value={dateFilter} onChange={e=>setDateFilter(e.target.value)} style={{appearance:"none",padding:"8px 28px 8px 12px",border:`1px solid ${C.primary[400]}`,borderRadius:4,fontSize:12,color:C.grey[800],background:C.grey[100],cursor:"pointer",outline:"none",fontFamily:font,minWidth:150}}>
-                {DATE_OPTIONS.map(o=><option key={o}>{o}</option>)}
+              <select value={sortBy} onChange={e=>setSortBy(e.target.value)} style={{appearance:"none",padding:"8px 28px 8px 12px",border:`1px solid ${C.grey[400]}`,borderRadius:4,fontSize:12,color:C.grey[800],background:C.grey[100],cursor:"pointer",outline:"none",fontFamily:font,minWidth:150}}>
+                {SORT_BY_OPTIONS.map(o=><option key={o}>{o}</option>)}
               </select>
               <ChevronDown size={10} color={C.grey[500]} style={{position:"absolute",right:9,top:"50%",transform:"translateY(-50%)",pointerEvents:"none"}}/>
             </div>
@@ -1594,7 +1661,7 @@ export default function App() {
               <span style={{fontSize:12,color:C.grey[500],fontFamily:font}}>to</span>
               <input type="date" value={customEnd} onChange={e=>setCustomEnd(e.target.value)} aria-label="Custom date range end" style={{padding:"7px 8px",border:`1px solid ${C.grey[300]}`,borderRadius:6,fontSize:12,color:C.grey[700],background:C.grey[100],fontFamily:font}}/>
             </>}
-            <button onClick={()=>{setSearch("");setCtFilter("All Case Types");setSevFilter("All Severity");setStatusFilter("Active");setDateFilter("All Severity");setCustomStart("");setCustomEnd("");}} aria-label="Reset all filters to default" title="Reset filters" style={{display:"flex",alignItems:"center",justifyContent:"center",width:32,height:32,border:`1px solid ${C.grey[400]}`,borderRadius:6,background:C.grey[100],color:C.grey[700],cursor:"pointer",outline:"none"}}><RotateCcw size={15} color={C.grey[700]}/></button>
+            <button onClick={()=>{setFacilityFilter([...FACILITIES]);setSearch("");setCtFilter("All Case Types");setSevFilter("All Severity");setStatusFilter("Active");setSortFilter("All Severity");setDateFilter("Visit Date");setSortBy("Visit Date");setCustomStart("");setCustomEnd("");}} aria-label="Reset all filters to default" title="Reset filters" style={{display:"flex",alignItems:"center",justifyContent:"center",width:32,height:32,border:`1px solid ${C.grey[400]}`,borderRadius:6,background:C.grey[100],color:C.grey[700],cursor:"pointer",outline:"none"}}><RotateCcw size={15} color={C.grey[700]}/></button>
           </div>
 
           {/* Table */}
