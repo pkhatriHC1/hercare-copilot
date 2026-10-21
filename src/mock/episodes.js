@@ -32,13 +32,14 @@ const lmpFromEdd = (edd) => {
 };
 
 // Gestational age at a given reference date — { weeks, days, label }
-// For postpartum/closed episodes this returns a postpartum week count instead.
+// For postpartum/closed episodes this returns a postpartum week count instead,
+// derived from the actual deliveryDate (not the estimated edd).
 export const gaAtVisit = (episode, dateStr) => {
   const isPostpartum = episode.status === "postpartum" || episode.status === "closed";
   if (isPostpartum) {
-    const edd = parseDate(episode.edd);
+    const delivery = episode.deliveryDate ? parseDate(episode.deliveryDate) : parseDate(episode.edd);
     const target = parseDate(dateStr);
-    const diffDays = Math.round((target - edd) / 86400000);
+    const diffDays = Math.round((target - delivery) / 86400000);
     if (diffDays < 0) {
       // Visit occurred before delivery — compute prenatal GA
       const lmp = lmpFromEdd(episode.edd);
@@ -125,8 +126,8 @@ export const EPISODES = [
   { id:"EP-003", patientId:"PS-0081", status:"prenatal",   edd:"2027-02-10", gravida:1, para:0, startDate:"2026-05-06", obType:"OB Non-Surgical" },
   { id:"EP-004", patientId:"JW-3431", status:"prenatal",   edd:"2027-03-01", gravida:5, para:2, startDate:"2026-05-24", obType:"OB Surgical" },
   { id:"EP-005", patientId:"AT-9012", status:"prenatal",   edd:"2027-03-15", gravida:1, para:0, startDate:"2026-06-07", obType:"OB Non-Surgical" },
-  { id:"EP-006", patientId:"LK-5509", status:"postpartum", edd:"2026-09-09", gravida:3, para:1, startDate:"2025-12-13", obType:"OB Non-Surgical" },
-  { id:"EP-007", patientId:"NB-7742", status:"closed",     edd:"2026-06-23", gravida:2, para:1, startDate:"2025-09-06", obType:"OB Non-Surgical" },
+  { id:"EP-006", patientId:"LK-5509", status:"postpartum", edd:"2026-09-09", deliveryDate:"2026-09-09", gravida:3, para:1, startDate:"2025-12-13", obType:"OB Non-Surgical" },
+  { id:"EP-007", patientId:"NB-7742", status:"closed",     edd:"2026-06-23", deliveryDate:"2026-06-23", gravida:2, para:1, startDate:"2025-09-06", obType:"OB Non-Surgical" },
   { id:"EP-008", patientId:"NB-7742", status:"prenatal",   edd:"2027-06-15", gravida:3, para:1, startDate:"2026-09-08", obType:"OB Non-Surgical" },
 ];
 
@@ -200,7 +201,21 @@ export const visitsForEpisode = (episodeId) => VISITS.filter(v => v.episodeId ==
 
 export const getEpisode = (episodeId) => EPISODES.find(e => e.id === episodeId) || null;
 
-// Active episodes (not closed) with computed nextVisit and GA
+// Status-aware due-date label for an episode — one derivation rule used by
+// both the worklist row and the patient-detail header.
+//   prenatal            -> { kind:"edd",    label:"EDD <date>",    ga:<prenatal GA> }
+//   postpartum | closed -> { kind:"delivered", label:"Delivered <date>", ga:<postpartum age> }
+export const dueDateLabel = (episode) => {
+  const isPostpartum = episode.status === "postpartum" || episode.status === "closed";
+  const ga = gestationalAge(episode);
+  if (isPostpartum) {
+    const dd = episode.deliveryDate || episode.edd;
+    return { kind: "delivered", label: `Delivered ${formatDate(dd)}`, ga };
+  }
+  return { kind: "edd", label: `EDD ${formatDate(episode.edd)}`, ga };
+};
+
+// Active episodes (not closed) with computed nextVisit, GA, and due-date label
 export const getActiveEpisodes = () => {
   return EPISODES
     .filter(e => e.status !== "closed")
@@ -208,6 +223,7 @@ export const getActiveEpisodes = () => {
       const visits = visitsForEpisode(e.id);
       const nv = nextVisit(visits);
       const ga = gestationalAge(e);
+      const due = dueDateLabel(e);
       return {
         ...e,
         visits,
@@ -216,6 +232,7 @@ export const getActiveEpisodes = () => {
         parityLabel: `G${e.gravida}P${e.para}`,
         hasNoUpcoming: nv === null,
         gaLabel: ga.postpartum ? `${ga.weeks}w PP` : `${ga.weeks}W`,
+        due,
       };
     });
 };

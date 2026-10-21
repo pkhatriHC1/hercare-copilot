@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { EPISODES, VISITS, VISIT_TYPES, getActiveEpisodes, getEpisode, formatDate, nextVisit, futureVisits, pastVisits, visitsForEpisode, visitOneLiner, gestationalAge, gaAtVisit, getMaternalRiskTier } from "./mock/episodes.js";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { EPISODES, VISITS, VISIT_TYPES, getActiveEpisodes, getEpisode, formatDate, nextVisit, futureVisits, pastVisits, visitsForEpisode, visitOneLiner, gestationalAge, gaAtVisit, getMaternalRiskTier, dueDateLabel } from "./mock/episodes.js";
 
 const GlobalReset = () => {
   useEffect(() => {
@@ -10,7 +10,7 @@ const GlobalReset = () => {
   }, []);
   return null;
 };
-import { Search, Filter, ChevronDown, ArrowRight, ChevronLeft, MessageSquare, ClipboardList, User, Hash, Stethoscope, RotateCcw, CalendarDays, Clock, MapPin, ExternalLink, X, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Search, Filter, ChevronDown, ArrowRight, ChevronLeft, MessageSquare, ClipboardList, User, Hash, Stethoscope, RotateCcw, CalendarDays, Clock, MapPin, ExternalLink, X, AlertCircle, CheckCircle2, Plus } from "lucide-react";
 import { Button } from "./components/Button";
 
 // ── Design tokens (identical to BloodHealth) ──────────────────────
@@ -36,6 +36,7 @@ const CASE_TYPES = ["All Case Types","OB Surgical","OB Non-Surgical","Postpartum
 // ── Icons ─────────────────────────────────────────────────────────
 const BloodDrop  = ({size=15,color}) => <svg width={size} height={size} viewBox="0 0 24 24" fill={color} stroke="none"><path d="M12 2C12 2 5 10.5 5 15a7 7 0 0 0 14 0c0-4.5-7-13-7-13z"/></svg>;
 const Pregnant   = ({size=15,color}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="4" r="2"/><path d="M9 8h3l1 4c1.5 0 3 1.5 3 3.5S14.5 19 13 19H9"/><path d="M9 8l-1 5"/><path d="M8 13l-1 6"/></svg>;
+const Venus      = ({size=13,color}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="9" r="6"/><line x1="12" y1="15" x2="12" y2="22"/><line x1="9" y1="19" x2="15" y2="19"/></svg>;
 const CheckCircle= ({size=24,color}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>;
 
 // ── Shared micro-components (same as BloodHealth) ─────────────────
@@ -1333,14 +1334,20 @@ const IQAssistantPanel = ({p, onClose, expanded, onToggleExpand}) => {
 };
 
 // ── Patient Header — episode-scoped, shown across all tabs ───────
-const PatientHeader = ({p, episode, onOpenIQ}) => {
+const PatientHeader = ({p, episode, onOpenIQ, onBack}) => {
   const ep = episode || getEpisode(null);
   const mhr = p._mhr;
   const tier = getMaternalRiskTier(mhr.score);
   const ga = episode ? gestationalAge(episode) : null;
   const gaLabel = ga ? (ga.postpartum ? `${ga.weeks} weeks postpartum` : `${ga.weeks}w${ga.days}d`) : p.gestAge;
+  const due = episode ? dueDateLabel(episode) : null;
   return (
     <div style={{background:"#fff",borderBottom:`1px solid ${C.grey[300]}`,flexShrink:0,padding:"12px 20px",display:"flex",alignItems:"center",gap:16}}>
+      {onBack && (
+        <button onClick={onBack} aria-label="Back to Worklist" title="Back to Worklist" style={{display:"flex",alignItems:"center",justifyContent:"center",width:32,height:32,borderRadius:8,border:"none",background:C.grey[200],cursor:"pointer",flexShrink:0,color:C.grey[700]}}>
+          <ChevronLeft size={20} strokeWidth={2.25} color={C.grey[700]}/>
+        </button>
+      )}
       <div style={{flex:1,minWidth:0}}>
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:5}}>
           <span style={{fontSize:18,fontWeight:700,color:C.grey[800],fontFamily:font}}>{p.name}</span>
@@ -1353,9 +1360,9 @@ const PatientHeader = ({p, episode, onOpenIQ}) => {
           <span style={{fontSize:12,color:C.grey[400],margin:"0 2px"}}>·</span>
           <User size={11} color={C.grey[500]}/><span style={{fontSize:12,color:C.grey[700],fontFamily:font}}>Age {p.age}</span>
           <span style={{fontSize:12,color:C.grey[400],margin:"0 2px"}}>·</span>
-          <span style={{fontSize:12,fontWeight:700,color:C.grey[700],fontFamily:font}}>GA</span><span style={{fontSize:12,color:C.grey[700],fontFamily:font,marginLeft:3}}>{gaLabel}</span>
+          <span style={{fontSize:12,fontWeight:700,color:C.grey[700],fontFamily:font}}>{due.kind === "delivered" ? "Delivered" : "GA"}</span><span style={{fontSize:12,color:C.grey[700],fontFamily:font,marginLeft:3}}>{due.kind === "delivered" ? formatDate(episode.deliveryDate || episode.edd) : gaLabel}</span>
           <span style={{fontSize:12,color:C.grey[400],margin:"0 2px"}}>·</span>
-          <span style={{fontSize:12,fontWeight:700,color:C.grey[700],fontFamily:font}}>EDD</span><span style={{fontSize:12,color:C.grey[700],fontFamily:font,marginLeft:3}}>{episode?formatDate(episode.edd):p.edd}</span>
+          <span style={{fontSize:12,fontWeight:700,color:C.grey[700],fontFamily:font}}>{due.kind === "delivered" ? "Postpartum" : "EDD"}</span><span style={{fontSize:12,color:C.grey[700],fontFamily:font,marginLeft:3}}>{due.kind === "delivered" ? `${ga.weeks} weeks postpartum` : formatDate(episode.edd)}</span>
           <span style={{fontSize:12,color:C.grey[400],margin:"0 2px"}}>·</span>
           <span style={{fontSize:12,color:C.grey[500],fontFamily:font}}>Obstetric History</span><span style={{fontSize:12,fontWeight:600,color:C.grey[700],fontFamily:font,marginLeft:3}}>{episode?`G${episode.gravida}P${episode.para}`:p.parity}</span>
           <span style={{fontSize:12,color:C.grey[400],margin:"0 2px"}}>·</span>
@@ -1408,15 +1415,15 @@ const PatientWorkspace = ({patient,allPatients,episodeId,onBack,onSelectPatient,
             <span style={{fontSize:12,fontWeight:400,color:C.grey[500],fontFamily:font}}>Anemia Management</span>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:5,padding:"5px 12px",borderRadius:6,background:C.grey[100],boxShadow:"0 1px 4px rgba(0,0,0,0.08)",border:`1px solid ${C.grey[300]}`}}>
-            <Pregnant size={13} color={C.hc[400]}/>
+            <Venus size={13} color={C.hc[400]}/>
             <span style={{fontSize:12,fontWeight:600,color:C.grey[800],fontFamily:font}}>HerCare Co-Pilot</span>
           </div>
         </div>
-        <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:6}}><div style={{width:6,height:6,borderRadius:"50%",background:C.success[400],boxShadow:`0 0 6px ${C.success[400]}`}}/><span style={{fontSize:12,color:C.success[400],fontFamily:font}}>FHIR R4 Live</span></div>
+        <div style={{marginLeft:"auto"}}/>
       </div>
       <div style={{display:"flex",flex:1,overflow:"hidden"}}>
         <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",minWidth:0}}>
-          <PatientHeader p={patient} episode={episode} onOpenIQ={()=>setIqOpen(o=>!o)}/>
+          <PatientHeader p={patient} episode={episode} onOpenIQ={()=>setIqOpen(o=>!o)} onBack={onBack}/>
           <ZoneTabs active={zone} onChange={setZone}/>
           <div style={{flex:1,display:"flex",overflow:"hidden",minHeight:0}}>
             <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",minWidth:0}}>
@@ -1593,18 +1600,30 @@ const VisitsZone = ({p, episode}) => {
     );
   };
 
+  const ScheduleStub = () => (
+    <button disabled title="Scheduling write-back to Epic is coming soon" style={{display:"inline-flex",alignItems:"center",gap:5,background:C.grey[300],color:C.grey[500],border:"none",borderRadius:6,padding:"7px 14px",fontSize:12,fontWeight:600,cursor:"not-allowed",fontFamily:font,opacity:0.75}}>
+      <Plus size={13}/>
+      Schedule visit
+      <span style={{fontSize:9,fontWeight:400,fontStyle:"italic"}}>soon</span>
+    </button>
+  );
+
   return (
     <div style={{flex:1,overflowY:"auto",padding:"16px 20px",display:"flex",flexDirection:"column",gap:18}}>
 
       {/* NEXT VISIT */}
       <div>
-        <SectionHeader label="Next Visit" icon={<Clock size={15} color={C.primary[500]}/>}/>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+          <SectionHeader label="Next Visit" icon={<Clock size={15} color={C.primary[500]}/>}/>
+          <ScheduleStub/>
+        </div>
         {nv ? (
           <VisitRow v={nv} isNext={true}/>
         ) : (
-          <div style={{padding:"14px 16px",background:C.orange[100],border:`1px solid ${C.orange[400]}55`,borderRadius:8,display:"flex",alignItems:"center",gap:8}}>
+          <div style={{padding:"14px 16px",background:C.orange[100],border:`1px solid ${C.orange[400]}55`,borderRadius:8,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
             <AlertCircle size={15} color={C.orange[400]}/>
             <span style={{fontSize:13,fontWeight:600,color:C.orange[400],fontFamily:font}}>No upcoming visit — scheduling gap to chase</span>
+            <div style={{marginLeft:"auto"}}><ScheduleStub/></div>
           </div>
         )}
       </div>
@@ -1644,15 +1663,16 @@ const PatientRow = ({p, onOpen, onOpenACOG}) => {
   const ep = p._ep;
   const nv = ep ? ep.nextVisit : null;
   const noUpcoming = ep && ep.hasNoUpcoming;
+  const highlightRow = noUpcoming && p.name !== "Ashley Thompson";
   return (
     <>
-      <tr style={{borderBottom:`1px solid ${C.grey[300]}`,cursor:"pointer",background:noUpcoming?C.orange[100]:"transparent"}} onMouseEnter={e=>e.currentTarget.style.background=noUpcoming?C.orange[100]:C.grey[200]} onMouseLeave={e=>e.currentTarget.style.background=noUpcoming?C.orange[100]:"transparent"} onClick={()=>onOpen(p,"overview",ep?.id)}>
+      <tr style={{borderBottom:`1px solid ${C.grey[300]}`,cursor:"pointer",background:highlightRow?C.orange[100]:"transparent"}} onMouseEnter={e=>e.currentTarget.style.background=highlightRow?C.orange[100]:C.grey[200]} onMouseLeave={e=>e.currentTarget.style.background=highlightRow?C.orange[100]:"transparent"} onClick={()=>onOpen(p,"overview",ep?.id)}>
 
         {/* PATIENT */}
         <td style={{padding:"12px 16px",minWidth:190}}>
           <span style={{fontSize:14,fontWeight:600,color:C.grey[800],fontFamily:font,display:"block",marginBottom:2}}>{p.name}</span>
           <span style={{fontSize:12,color:C.grey[500],fontFamily:font,display:"block",marginBottom:3}}>MRN {p.id} · Age {p.age}</span>
-          <span style={{fontSize:12,color:C.grey[700],fontFamily:font,display:"block",marginBottom:2}}><strong style={{fontWeight:700}}>EDD</strong> {formatDate(ep?ep.edd:p.edd)}</span>
+          <span style={{fontSize:12,color:C.grey[700],fontFamily:font,display:"block",marginBottom:2}}>{ep ? ep.due.label : `EDD ${p.edd}`}</span>
           <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
             <span style={{fontSize:10,fontWeight:600,color:C.grey[700],background:C.grey[200],border:`1px solid ${C.grey[300]}`,borderRadius:4,padding:"2px 6px",fontFamily:font}}>{ep?ep.parityLabel:p.parity}</span>
             <span style={{fontSize:10,fontWeight:600,color:C.grey[700],background:C.grey[200],border:`1px solid ${C.grey[300]}`,borderRadius:4,padding:"2px 6px",fontFamily:font}}>{ep?ep.gaLabel:p.gestAge.replace(" wks","W")}</span>
@@ -1750,6 +1770,16 @@ export default function App() {
   const [customEnd, setCustomEnd] = useState("");
   const [facilityMenuOpen, setFacilityMenuOpen] = useState(false);
   const [vtFilter, setVtFilter] = useState("All Visit Types");
+  const tableScrollRef = useRef(null);
+  const savedScrollRef = useRef(null);
+  const handleBackToWorklist = useCallback(() => {
+    setScreen("worklist");
+    requestAnimationFrame(() => {
+      if (tableScrollRef.current && savedScrollRef.current != null) {
+        tableScrollRef.current.scrollTop = savedScrollRef.current;
+      }
+    });
+  }, []);
   const SORT_OPTIONS = ["All Severity","Low","Intermediate","High","Very High"];
   const DATE_FILTER_OPTIONS = ["Visit Date","EDD","Custom Date Range"];
   const SORT_BY_OPTIONS = ["Next Visit Date","Severity"];
@@ -1763,7 +1793,7 @@ export default function App() {
   if(screen==="workspace" && activePatient)
     return (
       <><GlobalReset/><div style={{height:"100dvh",overflow:"hidden",display:"flex",flexDirection:"column"}}>
-        <PatientWorkspace patient={activePatient} allPatients={PATIENTS} episodeId={activeEpisodeId} onBack={()=>setScreen("worklist")} onSelectPatient={p=>setActivePatient(p)} defaultZone={defaultZone}/>
+        <PatientWorkspace patient={activePatient} allPatients={PATIENTS} episodeId={activeEpisodeId} onBack={handleBackToWorklist} onSelectPatient={p=>setActivePatient(p)} defaultZone={defaultZone}/>
       </div></>
     );
 
@@ -1807,11 +1837,11 @@ export default function App() {
             <span style={{fontSize:12,fontWeight:400,color:C.grey[500],fontFamily:font}}>Anemia Management</span>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:5,padding:"5px 12px",borderRadius:6,background:C.grey[100],boxShadow:"0 1px 4px rgba(0,0,0,0.08)",border:`1px solid ${C.grey[300]}`}}>
-            <Pregnant size={13} color={C.hc[400]}/>
+            <Venus size={13} color={C.hc[400]}/>
             <span style={{fontSize:12,fontWeight:600,color:C.grey[800],fontFamily:font}}>HerCare Co-Pilot</span>
           </div>
         </div>
-        <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:6}}><div style={{width:6,height:6,borderRadius:"50%",background:C.success[400],boxShadow:`0 0 6px ${C.success[400]}`}}/><span style={{fontSize:12,color:C.success[400],fontFamily:font}}>FHIR R4 Live</span></div>
+        <div style={{marginLeft:"auto"}}/>
       </div>
 
       <div style={{flex:1,overflow:"hidden",padding:"12px 16px",display:"flex",flexDirection:"column",minHeight:0}}>
@@ -1890,7 +1920,7 @@ export default function App() {
           </div>
 
           {/* Table */}
-          <div style={{flex:1,overflowY:"auto",overflowX:"auto",minHeight:0}}>
+          <div ref={tableScrollRef} style={{flex:1,overflowY:"auto",overflowX:"auto",minHeight:0}}>
             <table style={{width:"100%",borderCollapse:"collapse"}}>
               <thead>
                 <tr style={{background:C.grey[200],borderBottom:`1px solid ${C.grey[300]}`}}>
@@ -1901,7 +1931,7 @@ export default function App() {
                 {displayedPatients.length===0
                   ? <tr><td colSpan={COLS.length} style={{padding:24,textAlign:"center",fontSize:14,color:C.grey[500],fontFamily:font}}>No patients match</td></tr>
                   : displayedPatients.map(p => <PatientRow key={p._ep?._id||p.id} p={p}
-                      onOpen={(p,zone="overview",episodeId=null)=>{setActivePatient(p);setActiveEpisodeId(episodeId);setDefaultZone(zone);setScreen("workspace");}}
+                      onOpen={(p,zone="overview",episodeId=null)=>{if(tableScrollRef.current) savedScrollRef.current=tableScrollRef.current.scrollTop;setActivePatient(p);setActiveEpisodeId(episodeId);setDefaultZone(zone);setScreen("workspace");}}
                       onOpenACOG={p=>setAcogPatient(p)}/>)
                 }
               </tbody>
@@ -1911,7 +1941,7 @@ export default function App() {
           {/* Footer */}
           <div style={{padding:"9px 16px",borderTop:`1px solid ${C.grey[300]}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
             <span style={{fontSize:12,color:C.grey[500],fontFamily:font}}>Showing {displayedPatients.length} of {episodeRows.length} episodes</span>
-            <div style={{display:"flex",alignItems:"center",gap:6}}><div style={{width:6,height:6,borderRadius:"50%",background:C.success[400]}}/><span style={{fontSize:12,color:C.success[400],fontFamily:font}}>FHIR R4 Live · Synced 2 min ago</span></div>
+
           </div>
         </div>
       </div>
