@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { EPISODES, VISITS, VISIT_TYPES, getActiveEpisodes, getEpisode, formatDate, nextVisit, futureVisits, pastVisits, visitsForEpisode, visitOneLiner, gestationalAge, gaAtVisit, getMaternalRiskTier, dueDateLabel } from "./mock/episodes.js";
+import { EPISODES, VISITS, VISIT_TYPES, getActiveEpisodes, getEpisode, formatDate, nextVisit, futureVisits, pastVisits, cancelledVisits, visitsForEpisode, visitOneLiner, gestationalAge, gaAtVisit, getMaternalRiskTier, dueDateLabel } from "./mock/episodes.js";
 
 const GlobalReset = () => {
   useEffect(() => {
@@ -10,8 +10,17 @@ const GlobalReset = () => {
   }, []);
   return null;
 };
-import { Search, Filter, ChevronDown, ArrowRight, ChevronLeft, MessageSquare, ClipboardList, User, Hash, Stethoscope, RotateCcw, CalendarDays, Clock, MapPin, ExternalLink, X, AlertCircle, CheckCircle2, Plus } from "lucide-react";
+import { Search, Filter, ChevronDown, ArrowRight, ChevronLeft, MessageSquare, ClipboardList, User, Hash, Stethoscope, RotateCcw, CalendarDays, Clock, MapPin, ExternalLink, X, AlertCircle, Check, CheckCircle2, Plus } from "lucide-react";
 import { Button } from "./components/Button";
+
+// ── Cancellation reasons (MBH Not Treated list — HerCare & Anemia) ──
+const CANCELLATION_REASONS = [
+  "Cancelled/Postponed visit",
+  "Insurance denied treatment",
+  "No contact from patient",
+  "Patient declines treatment",
+  "Patient treatment plan complete",
+];
 
 // ── Design tokens (identical to BloodHealth) ──────────────────────
 const C = {
@@ -53,7 +62,7 @@ const StatusChip = ({status}) => {
 const StepActions = ({onBack,backLabel="← Back",onNext,nextLabel,nextOrange=false}) => (
   <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",gap:8,paddingTop:16,borderTop:`1px solid ${C.grey[300]}`,marginTop:16}}>
     {onBack && <Button variant="secondary" size="sm" onClick={onBack}>{backLabel}</Button>}
-    <Button variant={nextOrange?"cta":"primary"} size="sm" onClick={onNext}>{nextLabel}</Button>
+    <Button variant={nextOrange?"cta":"primary"} size="sm" onClick={onNext}>{nextOrange && <Check size={14} strokeWidth={3}/>} {nextLabel}</Button>
   </div>
 );
 const EvidenceBox = ({refs}) => (
@@ -402,14 +411,6 @@ const MHRModal = ({p, onClose}) => {
   const [showTransparency, setShowTransparency] = useState(false);
   const calcDate = "Oct 2, 2026 · 14:32";
 
-  const actions = mhr.score >= 35
-    ? ["Multidisciplinary planning — MFM, anesthesia, hematology","Blood-bank preparedness — type & crossmatch ≥4 units","Initiate IV iron therapy — Ferric Carboxymaltose STAT","Consider delaying elective procedure if unstable","CBC recheck in 24–48h"]
-    : mhr.score >= 20
-    ? ["Pre-delivery optimization recommended","IV iron therapy — Ferric Carboxymaltose 750mg within 14 days","MFM consultation recommended","Recheck Hgb + Ferritin in 7–10 days","Target Hgb ≥11 g/dL by 34 weeks gestation"]
-    : mhr.score >= 10
-    ? ["Enhanced anemia monitoring — CBC every 4 weeks","Consider IV iron if Hgb <11 g/dL","Obstetric follow-up with risk reassessment"]
-    : ["Routine prenatal monitoring","Oral iron supplementation if Hgb <11 g/dL","Standard CBC schedule per OB protocol"];
-
   // Severity dot color for risk drivers
   const dotColor = (sev) => sev==="high" ? C.error[400] : sev==="moderate" ? C.orange[400] : "#92600A";
 
@@ -525,21 +526,6 @@ const MHRModal = ({p, onClose}) => {
             </div>
           </div>
 
-          {/* ── AC4: Recommended Preparation Card ── */}
-          <div style={{background:"#fff",border:`1px solid ${C.grey[300]}`,borderRadius:10,padding:"14px 16px"}}>
-            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
-              <span style={{fontSize:16}}>🎯</span>
-              <span style={{fontSize:14,fontWeight:700,color:C.grey[800],fontFamily:font}}>Recommended Preparation</span>
-            </div>
-            <div style={{display:"flex",flexDirection:"column",gap:6}}>
-              {actions.map((a,i) => (
-                <div key={i} style={{display:"flex",gap:8,alignItems:"flex-start",fontSize:13,color:C.grey[700],fontFamily:font,lineHeight:1.5}}>
-                  <span style={{color:ac,flexShrink:0,marginTop:1,fontWeight:700}}>•</span>{a}
-                </div>
-              ))}
-            </div>
-          </div>
-
           {/* ── AC5: Data Transparency Drawer ── */}
           <div style={{border:`1px solid ${C.grey[300]}`,borderRadius:10,overflow:"hidden"}}>
             <button onClick={()=>setShowTransparency(s=>!s)} style={{width:"100%",padding:"10px 14px",background:C.grey[200],border:"none",display:"flex",alignItems:"center",gap:8,cursor:"pointer",fontFamily:font}}>
@@ -624,6 +610,8 @@ const OverviewZone = ({p, onNavigate}) => {
   const mhr = p._mhr;
   const hgbColor = getAnemiaGrade(currentHgb).color;
   const ferColor = p.labs[1].status==="critical"?C.error[400]:p.labs[1].status==="high"||p.labs[1].status==="borderline"?C.orange[400]:C.grey[600];
+  const tsatLab = p.labs.find(l=>l.label==="Transferrin Sat");
+  const tsatColor = !tsatLab || tsatLab.status==="missing" ? C.grey[500] : tsatLab.status==="critical" ? C.error[400] : tsatLab.status==="high" || tsatLab.status==="borderline" ? C.orange[400] : C.success[400];
   const protocol = p.severity==="Critical"?"Urgent: IV Iron + MFM Consultation":p.severity==="High"?"IV Iron Therapy Protocol – ACOG PB #233":"Monitoring + IV Iron Supplementation";
   const drug     = p.severity==="Critical"?"Ferric Carboxymaltose 1000mg IV — initiate within 24h":p.severity==="High"?"Ferric Carboxymaltose 750mg IV — week 1 & 3":"Ferric Carboxymaltose 500mg IV — reassess in 4 weeks";
   const recs = p.severity==="Critical"
@@ -637,10 +625,10 @@ const OverviewZone = ({p, onNavigate}) => {
       <div style={{background:"#fff",border:`1px solid ${C.grey[300]}`,borderRadius:12,overflow:"hidden",boxShadow:"0 1px 4px rgba(0,0,0,0.04)"}}>
         <div style={{padding:"11px 18px",borderBottom:`1px solid ${C.grey[200]}`,display:"flex",alignItems:"center",gap:7}}>
           <span style={{fontSize:14}}>⚠️</span>
-          <span style={{fontSize:14,fontWeight:700,color:C.grey[800],fontFamily:font}}>Risk Assessment</span>
+          <span style={{fontSize:14,fontWeight:700,color:C.grey[800],fontFamily:font}}>Clinical Summary</span>
         </div>
-        {/* Six value columns: HGB · Ferritin · BP · Maternal Health · EDD · Active Order */}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr 1fr 1.4fr",borderBottom:`1px solid ${C.grey[200]}`}}>
+        {/* Six value columns: HGB · Ferritin · TSAT · BP · Maternal Health · Active Order */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(5,14%) 30%",borderBottom:`1px solid ${C.grey[200]}`}}>
           <div style={{padding:"14px 18px",borderRight:`1px solid ${C.grey[200]}`}}>
             <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",color:C.grey[500],fontFamily:font,marginBottom:6}}>HGB</div>
             <div style={{display:"flex",alignItems:"baseline",gap:3,marginBottom:4}}>
@@ -657,6 +645,13 @@ const OverviewZone = ({p, onNavigate}) => {
             <div style={{display:"flex",alignItems:"baseline",gap:3}}>
               <span style={{fontSize:32,fontWeight:700,color:ferColor,fontFamily:font,lineHeight:1,letterSpacing:"-0.02em"}}>{p.labs[1].value}</span>
               <span style={{fontSize:12,color:C.grey[500],fontFamily:font}}>ng/mL</span>
+            </div>
+          </div>
+          <div style={{padding:"14px 18px",borderRight:`1px solid ${C.grey[200]}`}}>
+            <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",color:C.grey[500],fontFamily:font,marginBottom:6}}>TSAT</div>
+            <div style={{display:"flex",alignItems:"baseline",gap:3}}>
+              <span style={{fontSize:32,fontWeight:700,color:tsatColor,fontFamily:font,lineHeight:1,letterSpacing:"-0.02em"}}>{tsatLab?.value ?? "—"}</span>
+              <span style={{fontSize:12,color:C.grey[500],fontFamily:font}}>%</span>
             </div>
           </div>
           <div style={{padding:"14px 18px",borderRight:`1px solid ${C.grey[200]}`}}>
@@ -678,14 +673,6 @@ const OverviewZone = ({p, onNavigate}) => {
             <div onClick={()=>setMhrOpen(true)} style={{cursor:"pointer"}} title={mhr.cat}>
               <MHRGauge score={mhr.score} maxPossible={mhr.maxPossible} color={mhr.color} compact/>
             </div>
-          </div>
-          <div style={{padding:"14px 18px",borderRight:`1px solid ${C.grey[200]}`}}>
-            <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",color:C.grey[500],fontFamily:font,marginBottom:6}}>Visit Date</div>
-            <div style={{fontSize:18,fontWeight:600,color:C.grey[800],fontFamily:font,lineHeight:1.3}}>{p.followUpDate}</div>
-          </div>
-          <div style={{padding:"14px 18px",borderRight:`1px solid ${C.grey[200]}`}}>
-            <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",color:C.grey[500],fontFamily:font,marginBottom:6}}>EDD</div>
-            <div style={{fontSize:18,fontWeight:600,color:C.grey[800],fontFamily:font,lineHeight:1.3}}>{p.edd}</div>
           </div>
           <div style={{padding:"14px 18px"}}>
             <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",color:C.grey[500],fontFamily:font,marginBottom:6}}>Active Order</div>
@@ -744,7 +731,7 @@ const OverviewZone = ({p, onNavigate}) => {
           </div>
           {/* CTA */}
           <div style={{display:"flex",justifyContent:"flex-end"}}>
-            <button onClick={()=>onNavigate("cp")} style={{background:C.primary[600],color:"#fff",border:"none",borderRadius:8,padding:"9px 18px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:font,display:"flex",alignItems:"center",gap:6}}>
+            <button onClick={()=>onNavigate("cp")} style={{background:C.orange[400],color:"#fff",border:"none",borderRadius:8,padding:"9px 18px",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:font,display:"flex",alignItems:"center",gap:6}}>
               Review Optimization Recommendations <ArrowRight size={13}/>
             </button>
           </div>
@@ -1055,9 +1042,12 @@ const CarePlanZone = ({p}) => {
   const [approved, setApproved]     = useState(p.carePlanStatus==="generated");
   const [attestedDx, setAttestedDx] = useState(p.diagnosis);
   const [clinicalNotes, setClinicalNotes] = useState("");
-  const [paChecked, setPaChecked]   = useState(false);
+  const [targetHgb, setTargetHgb] = useState("13");
+  const [appliedTargetHgb, setAppliedTargetHgb] = useState(13);
+  const [manualMode, setManualMode] = useState(false);
+  const [paChecked, setPaChecked]   = useState(true);
 
-  const steps = ["Diagnose","Care Recommendations"];
+  const steps = ["Optimization Recommendations","Prior Auth","Notify"];
   const s = p.severity;
 
   const criteriaResults = [
@@ -1076,6 +1066,13 @@ const CarePlanZone = ({p}) => {
   };
 
   const drug = s==="Critical" ? "Ferric Carboxymaltose 1000mg IV — initiate within 24h, repeat in 7 days" : "Ferric Carboxymaltose 750mg IV — week 1 & 3";
+  const currentHgb = parseFloat(p.labs[0]?.value) || 10;
+  const patientWeight = parseFloat(p.weight) || 68.04;
+  const calculatedDose = Math.max(0, Math.round((patientWeight * (appliedTargetHgb - currentHgb) * 2.4 + 500) / 50) * 50);
+  const recalculateDose = () => {
+    const nextTarget = Number(targetHgb);
+    if (Number.isFinite(nextTarget) && nextTarget >= 5 && nextTarget <= 20) setAppliedTargetHgb(nextTarget);
+  };
 
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
@@ -1094,8 +1091,8 @@ const CarePlanZone = ({p}) => {
       <div style={{padding:"14px 20px 0",flexShrink:0,background:"#fff",borderBottom:`1px solid ${C.grey[300]}`}}>
         <div style={{display:"flex",alignItems:"center",paddingBottom:14}}>
           {steps.map((lbl,i) => (
-            <div key={lbl} style={{display:"flex",alignItems:"center",flex:i<steps.length-1?1:0}}>
-              <div style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer"}} onClick={()=>i<=step&&setStep(i)}>
+            <div key={lbl} onClick={()=>setStep(i)} style={{display:"flex",alignItems:"center",flex:i<steps.length-1?1:0,cursor:"pointer"}}>
+              <div style={{display:"flex",alignItems:"center",gap:6}}>
                 <SC i={i}/>
                 <span style={{fontSize:12,fontWeight:600,fontFamily:font,whiteSpace:"nowrap",color:i<step?C.success[400]:i===step?C.grey[800]:C.grey[400]}}>{lbl}</span>
               </div>
@@ -1108,63 +1105,110 @@ const CarePlanZone = ({p}) => {
       {/* ── Step content — white, padded, scrollable ── */}
       <div style={{flex:1,overflowY:"auto",padding:"20px 24px 32px",background:"#fff"}}>
 
-        {/* ══ STEP 0: DIAGNOSE ══ */}
-        {step===0 && <div>
-          <StepHeader eyebrow="AI Diagnosis & Recommendation" title="Review AI Diagnosis & Treatment"/>
+        {/* ══ STEP 0: OPTIMIZATION RECOMMENDATIONS ══ */}
+        {step===0 && <div style={{background:"#fff",border:`1px solid ${C.grey[300]}`,borderRadius:8,padding:"16px 14px 14px"}}>
+          <div style={{fontSize:18,fontWeight:700,color:C.grey[800],fontFamily:font,marginBottom:16}}>Anemic - Iron deficiency identified (TSAT &lt; 20)</div>
+          <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",color:C.secondary[500],fontFamily:font,marginBottom:5}}>Evidence-Based Recommendations</div>
+          <div style={{fontSize:14,fontWeight:600,color:C.grey[800],fontFamily:font,lineHeight:1.45,paddingBottom:16,borderBottom:`1px solid ${C.grey[300]}`}}>Screening for anemia and iron deficiency (hemoglobin + ferritin) Oral/IV Iron. Consider possible sources of chronic blood loss, malabsorption, dietary deficiency, or medications.</div>
 
-          {/* AI gradient block — dark teal, exact BloodHealth style */}
-          <div style={{background:`linear-gradient(135deg,${C.primary[600]},${C.primary[500]},${C.secondary[600]})`,borderRadius:10,padding:"16px 20px",marginBottom:20,position:"relative",overflow:"hidden"}}>
-            <div style={{position:"absolute",inset:0,opacity:0.06,backgroundImage:"radial-gradient(rgba(255,255,255,0.9) 1px,transparent 1px)",backgroundSize:"22px 22px",pointerEvents:"none"}}/>
-            <div style={{position:"relative"}}>
-              <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",color:"rgba(255,255,255,0.5)",fontFamily:font,marginBottom:8}}>AI Diagnosis & Recommendation</div>
-              <div style={{fontSize:16,fontWeight:700,color:"#fff",fontFamily:font,marginBottom:8}}>{p.diagnosis}</div>
-              <div style={{fontSize:14,color:"rgba(255,255,255,0.7)",fontFamily:font,lineHeight:1.6,marginBottom:14}}>
-                Patient meets ACOG criteria: Hgb {p.labs[0].value} g/dL at {p.gestAge}, Ferritin {p.labs[1].value} ng/mL. Evidence-based protocol per ACOG Practice Bulletin #233 (2021) – Anemia in Pregnancy.
-              </div>
-              <div style={{display:"flex",gap:6}}>
-                {p.icdCodes.map(c=>(
-                  <span key={c} style={{fontSize:12,fontWeight:600,color:"rgba(255,255,255,0.85)",background:"rgba(255,255,255,0.12)",border:"1px solid rgba(255,255,255,0.25)",borderRadius:4,padding:"2px 8px",fontFamily:font}}>{c}</span>
-                ))}
-              </div>
-            </div>
+          <div style={{marginTop:16,marginBottom:14}}>
+            <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",color:C.grey[600],fontFamily:font,marginBottom:6}}>Attested Diagnosis</div>
+            <input value="Iron deficiency identified (TSAT &lt; 20)" readOnly style={{width:"100%",boxSizing:"border-box",border:`1px solid ${C.grey[300]}`,borderRadius:7,padding:"9px 12px",fontSize:12,fontFamily:font,color:C.grey[700],outline:"none",background:"#fff"}}/>
           </div>
 
-          {/* Clinical Criteria Met */}
           <div style={{marginBottom:16}}>
-            <div style={{fontSize:14,fontWeight:600,color:C.grey[800],fontFamily:font,marginBottom:8}}>ACOG Clinical Criteria Met</div>
-            <div style={{background:C.grey[200],border:`1px solid ${C.grey[300]}`,borderRadius:8,padding:"10px 14px",fontSize:14,color:C.grey[700],fontFamily:font,lineHeight:1.6}}>
-              Pregnant patient, Hgb &lt;11 g/dL (1st/3rd trimester) or &lt;10.5 g/dL (2nd trimester), Ferritin &lt;30 ng/mL
+            <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",color:C.grey[600],fontFamily:font,marginBottom:6}}>Clinical Notes</div>
+            <textarea value={clinicalNotes} onChange={e=>setClinicalNotes(e.target.value)} placeholder="Add clinical notes, observations, or additional context..." rows={3} style={{width:"100%",boxSizing:"border-box",border:`1px solid ${C.grey[300]}`,borderRadius:7,padding:"9px 12px",fontSize:12,fontFamily:font,color:C.grey[800],resize:"vertical",outline:"none"}}/>
+          </div>
+
+          <div style={{borderTop:`1px solid ${C.grey[300]}`,paddingTop:16}}>
+            <div style={{fontSize:14,fontWeight:700,color:C.grey[800],fontFamily:font,marginBottom:12}}>Interventions</div>
+            <div style={{border:`1px solid ${C.grey[300]}`,borderLeft:`3px solid ${C.primary[500]}`,borderRadius:0,padding:"14px 12px 0",marginBottom:16}}>
+              <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",color:C.grey[500],fontFamily:font,marginBottom:5}}>Medication Recommendation</div>
+              <div style={{fontSize:13,fontWeight:700,color:C.grey[800],fontFamily:font,marginBottom:14}}>IV Iron infusion</div>
+              <div style={{background:C.grey[200],border:`1px solid ${C.grey[300]}`,borderRadius:7,padding:"12px 14px"}}>
+                {manualMode && <div style={{background:C.secondary[100],border:`1px solid ${C.secondary[200]}`,borderRadius:6,padding:"11px 10px",marginBottom:8}}>
+                  <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",color:C.primary[600],fontFamily:font,marginBottom:8}}>Manual Target HGB Entry</div>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    <label htmlFor="target-hgb" style={{fontSize:11,fontWeight:600,color:C.grey[700],fontFamily:font}}>Target HGB:</label>
+                    <input id="target-hgb" type="number" min="5" max="20" step="0.1" value={targetHgb} onChange={e=>setTargetHgb(e.target.value)} aria-label="Target hemoglobin" style={{width:72,border:`1px solid ${C.grey[300]}`,borderRadius:5,padding:"5px 7px",fontSize:12,color:C.grey[800],fontFamily:font,outline:"none",background:"#fff"}}/>
+                    <span style={{fontSize:11,color:C.grey[600],fontFamily:font}}>g/dL</span>
+                    <button type="button" onClick={recalculateDose} style={{border:"none",borderRadius:5,padding:"6px 10px",background:C.primary[500],color:"#fff",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:font}}>Recalculate</button>
+                  </div>
+                  <div style={{fontSize:10,color:C.grey[500],fontFamily:font,marginTop:7}}>Default target is 13 g/dL. Enter a custom value and recalculate to update the dose.</div>
+                </div>}
+                <div style={{display:"flex",alignItems:"center",gap:8,fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",color:C.grey[600],fontFamily:font}}>Calculated Dose ({manualMode?"Manual":"Ganzoni"}) {!manualMode && <button type="button" onClick={()=>setManualMode(true)} style={{fontSize:10,fontWeight:600,textTransform:"none",letterSpacing:0,border:`1px solid ${C.grey[300]}`,borderRadius:5,padding:"3px 6px",color:C.grey[700],background:"#fff",cursor:"pointer",fontFamily:font}}>✎ Manual</button>}{manualMode && <button type="button" onClick={()=>{setTargetHgb("13");setAppliedTargetHgb(13);setManualMode(false);}} style={{fontSize:10,fontWeight:600,textTransform:"none",letterSpacing:0,border:`1px solid ${C.grey[300]}`,borderRadius:5,padding:"3px 6px",color:C.grey[700],background:"#fff",cursor:"pointer",fontFamily:font}}>↶ Reset</button>}</div>
+                <div style={{fontSize:25,fontWeight:400,color:C.primary[500],fontFamily:font,marginTop:12}}>{calculatedDose} <span style={{fontSize:12,color:C.grey[600]}}>mg IV iron (total)</span></div>
+                <div style={{fontSize:10,color:C.grey[500],fontFamily:font,marginTop:8,paddingBottom:12}}>Formula: {patientWeight.toFixed(2)} kg × ({appliedTargetHgb} − {currentHgb}) × 2.4 + 500 mg = {calculatedDose} mg</div>
+                {manualMode && <div style={{fontSize:10,color:C.primary[600],fontFamily:font,marginTop:-4,marginBottom:8}}>Manual Target HGB: {appliedTargetHgb} g/dL</div>}
+                <div style={{borderTop:`1px solid ${C.grey[300]}`,paddingTop:10,display:"flex",alignItems:"flex-start",gap:7,fontSize:10,color:C.grey[500],fontFamily:font,lineHeight:1.4}}><AlertCircle size={13} color={C.grey[500]} strokeWidth={1.7}/>This is the recommended total dose of intravenous iron for the target HGB of 13 g/dL. The actual order must be placed in EPIC based on institution-specific formulary availability.</div>
+              </div>
+            </div>
+            <div style={{background:C.yellow[100],border:`1px solid ${C.yellow[400]}55`,borderRadius:7,padding:"12px 14px"}}>
+              <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",color:"#92600A",fontFamily:font,marginBottom:4}}>Clinical Review Required</div>
+              <div style={{fontSize:12,color:"#92600A",fontFamily:font,lineHeight:1.45}}>Please review for patient-specific contraindications, drug interactions, and appropriateness before approval.</div>
             </div>
           </div>
 
-          <EvidenceBox refs={[
-            {title:"ACOG Practice Bulletin #233 (2021)",description:"Anemia in Pregnancy — IV iron preferred for moderate-severe"},
-            {title:"ACOG Safe Motherhood Initiative",description:"Severe Maternal Morbidity Prevention"},
-            {title:"WHO Anemia Guidelines for Pregnancy",description:"Hgb ≥11 g/dL target for pregnant women"},
-            {title:"NEJM 2015 – Breymann et al.",description:"IV iron achieves target Hgb 2–3 weeks faster than oral"},
-          ]}/>
-
-          {/* Attested Diagnosis */}
-          <div style={{marginBottom:14}}>
-            <div style={{fontSize:14,fontWeight:700,color:C.grey[800],fontFamily:font,marginBottom:6}}>
-              Attested Diagnosis <span style={{fontSize:12,fontWeight:400,color:C.secondary[500],marginLeft:4}}>(editable)</span>
-            </div>
-            <input value={attestedDx} onChange={e=>setAttestedDx(e.target.value)} style={{width:"100%",boxSizing:"border-box",border:`1px solid ${C.grey[300]}`,borderRadius:8,padding:"10px 14px",fontSize:14,fontFamily:font,color:C.grey[800],outline:"none",background:"#fff"}}/>
-          </div>
-
-          {/* Clinical Notes */}
-          <div style={{marginBottom:20}}>
-            <div style={{fontSize:14,fontWeight:700,color:C.grey[800],fontFamily:font,marginBottom:6}}>
-              Clinical Notes <span style={{fontSize:12,fontWeight:400,color:C.grey[500],marginLeft:4}}>(optional)</span>
-            </div>
-            <textarea value={clinicalNotes} onChange={e=>setClinicalNotes(e.target.value)} placeholder="Add any modifications or clinical reasoning..." rows={3} style={{width:"100%",boxSizing:"border-box",border:`1px solid ${C.grey[300]}`,borderRadius:8,padding:"9px 12px",fontSize:14,fontFamily:font,color:C.grey[800],resize:"vertical",outline:"none"}}/>
-          </div>
-
-          <StepActions onNext={()=>setStep(1)} nextLabel="Attest →"/>
+          <StepActions onNext={()=>setStep(1)} nextLabel="Attest and Check Prior Auth" nextOrange/>
         </div>}
 
-        {/* ══ STEP 1: CARE PLAN ══ */}
+        {/* ══ STEP 1: PRIOR AUTHORIZATION ══ */}
         {step===1 && <div>
+          <StepHeader eyebrow="Prior Authorization Analysis" title="Approval Probability"/>
+
+          <div style={{background:"#fff",border:`1px solid ${C.grey[300]}`,borderRadius:12,padding:"14px 16px",marginBottom:20}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:paChecked?16:8}}>
+              <div style={{display:"flex",alignItems:"center",gap:7}}>
+                <span style={{fontSize:14}}>📋</span>
+                <div>
+                  <span style={{fontSize:12,fontWeight:700,color:C.grey[700],fontFamily:font,textTransform:"uppercase",letterSpacing:"0.04em"}}>Prior Authorization Assessment</span>
+                  <div style={{fontSize:12,color:C.grey[700],fontFamily:font,marginTop:2}}>LCD Criteria Met: {metCount}/4</div>
+                </div>
+              </div>
+              {!paChecked && <button onClick={()=>setPaChecked(true)} style={{background:C.orange[400],color:"#fff",border:"none",borderRadius:6,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:font}}>Run PA Check</button>}
+            </div>
+            {!paChecked && <div style={{fontSize:12,color:C.grey[500],fontFamily:font,textAlign:"center"}}>Click "Run PA Check" to assess prior authorization probability based on LCD criteria</div>}
+            {paChecked && (
+              <div>
+                <div style={{background:C.success[100],border:`1px solid rgba(56,128,50,0.2)`,borderRadius:8,padding:"24px 20px",marginBottom:14,textAlign:"center"}}>
+                  <div style={{fontSize:30,fontWeight:500,color:C.success[400],fontFamily:font,lineHeight:1,marginBottom:6}}>{authPct}%</div>
+                  <div style={{fontSize:14,fontWeight:700,color:C.success[400],fontFamily:font,marginBottom:4}}>AI Probability of Approval</div>
+                  <div style={{fontSize:12,color:C.success[400],fontFamily:font,marginBottom:14}}>High likelihood — documentation is strong.</div>
+                  <div style={{background:"rgba(56,128,50,0.2)",borderRadius:999,height:6,overflow:"hidden"}}><div style={{height:"100%",width:`${authPct}%`,background:C.success[400],borderRadius:999}}/></div>
+                </div>
+                <div style={{fontSize:12,fontWeight:700,color:C.grey[800],fontFamily:font,marginBottom:7}}>Criteria Met: {metCount}/4</div>
+                {["Hemoglobin ≥ 10 g/dL","Ferritin < 100 ng/mL, and/or TSAT < 20%","Clinical indication: peri-operative transfusion risk","Evidence-based treatment failure or intolerance to oral iron"].map((criterion,index) => {
+                  const met = criteriaResults[index];
+                  return <div key={criterion} style={{display:"flex",alignItems:"center",gap:8,border:`1px solid ${C.grey[300]}`,borderRadius:6,padding:"7px 10px",marginBottom:6,fontSize:11,color:met?C.grey[700]:C.grey[400],fontFamily:font}}><CheckCircle2 size={14} color={met?C.success[400]:C.grey[400]}/>{criterion}</div>;
+                })}
+                <div style={{background:"#fff",border:`1px solid ${C.grey[300]}`,borderRadius:8,padding:"14px 16px",marginBottom:14}}>
+                  <div style={{fontSize:14,fontWeight:700,color:C.grey[800],fontFamily:font,marginBottom:12}}>Clinical Evidence</div>
+                  {[["Hemoglobin",`${p.labs[0].value} g/dL at ${p.gestAge} – Meets ACOG threshold`],["Ferritin",`${p.labs[1].value} ng/mL – Meets threshold`],["Pregnancy",`Gestational age ${p.gestAge}, ${p.parity}`],["Indication",`${attestedDx.split("–")[0].trim()} per ACOG Practice Bulletin #233`]].map(([k,v])=><div key={k} style={{fontSize:14,color:C.grey[700],fontFamily:font,marginBottom:8,lineHeight:1.5}}><strong style={{color:C.grey[800]}}>{k}:</strong> {v}</div>)}
+                </div>
+                <div style={{fontSize:12,fontWeight:700,color:C.grey[800],fontFamily:font,marginBottom:7}}>Diagnosis Codes (ICD-10)</div>
+                <div style={{fontSize:11,color:C.grey[600],fontFamily:font,marginBottom:14}}>{p.icdCodes.join(", ")}</div>
+                <div style={{background:`linear-gradient(135deg,${C.primary[600]},${C.primary[500]})`,borderRadius:8,padding:"14px 16px",marginBottom:14,color:"#fff"}}>
+                  <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",fontFamily:font,marginBottom:5}}>Suggestions to Improve Authorization Approval</div>
+                  <div style={{fontSize:11,fontFamily:font,lineHeight:1.5,marginBottom:10}}>The following documentation gaps may reduce approval probability. Address these to strengthen your case before submission.</div>
+                  <div style={{background:"rgba(255,255,255,0.1)",border:"1px solid rgba(255,255,255,0.25)",borderRadius:6,padding:"10px 12px",fontSize:11,fontFamily:font,lineHeight:1.6}}>
+                    <div><strong>Recommended Actions:</strong></div>
+                    <div>• Document a primary anemia diagnosis code and supporting laboratory results.</div>
+                    <div>• Add a secondary diagnosis code when clinically appropriate.</div>
+                    <div>• Ensure the underlying condition is coded as secondary when required.</div>
+                  </div>
+                  <div style={{fontSize:10,color:"rgba(255,255,255,0.7)",fontFamily:font,marginTop:9}}>This is an estimated approval likelihood only; payer criteria determine final coverage.</div>
+                </div>
+                <EvidenceBox refs={[{title:"Treatment of Iron Deficiency Anemia"},{title:"Intravenous Iron Therapy"}]}/>
+              </div>
+            )}
+          </div>
+
+          <StepActions onBack={()=>setStep(0)} onNext={()=>setStep(2)} nextLabel="Proceed to Notify →" nextOrange/>
+        </div>}
+
+        {/* ══ STEP 2: CARE PLAN ══ */}
+        {step===2 && <div>
           <StepHeader eyebrow="Evidence-Based Care Recommendations" title="ACOG Evidence-Based Care Recommendations"/>
 
           {/* Treatment Goals — grey-200 box, same as BloodHealth */}
@@ -1208,51 +1252,7 @@ const CarePlanZone = ({p}) => {
             <div style={{fontSize:12,color:"#92600A",fontFamily:font,lineHeight:1.5}}>Please review for patient-specific contraindications, gestational age considerations, and drug interactions before approval.</div>
           </div>
 
-          {/* Prior Authorization Assessment */}
-          <div style={{background:"#fff",border:`1px solid ${C.grey[300]}`,borderRadius:12,padding:"14px 16px",marginBottom:20}}>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:paChecked?16:8}}>
-              <div style={{display:"flex",alignItems:"center",gap:7}}>
-                <span style={{fontSize:14}}>📋</span>
-                <div>
-                  <span style={{fontSize:12,fontWeight:700,color:C.grey[700],fontFamily:font,textTransform:"uppercase",letterSpacing:"0.04em"}}>Prior Authorization Assessment</span>
-                  <div style={{fontSize:12,color:C.grey[700],fontFamily:font,marginTop:2}}>LCD Criteria Met: {metCount}/4</div>
-                </div>
-              </div>
-              {!paChecked && <button onClick={()=>setPaChecked(true)} style={{background:C.orange[400],color:"#fff",border:"none",borderRadius:6,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:font}}>Run PA Check</button>}
-            </div>
-            {!paChecked && <div style={{fontSize:12,color:C.grey[500],fontFamily:font,textAlign:"center"}}>Click "Run PA Check" to assess prior authorization probability based on LCD criteria</div>}
-            {paChecked && (
-              <div>
-                {/* Green hero — Image 2 style */}
-                <div style={{background:C.success[100],border:`1px solid rgba(56,128,50,0.2)`,borderRadius:8,padding:"24px 20px",marginBottom:14,textAlign:"center"}}>
-                  <div style={{fontSize:30,fontWeight:500,color:C.success[400],fontFamily:font,lineHeight:1,marginBottom:6}}>{authPct}%</div>
-                  <div style={{fontSize:14,fontWeight:700,color:C.success[400],fontFamily:font,marginBottom:4}}>AI Probability of Approval</div>
-                  <div style={{fontSize:12,color:C.success[400],fontFamily:font,marginBottom:14}}>High likelihood — documentation is strong.</div>
-                  <div style={{background:"rgba(56,128,50,0.2)",borderRadius:999,height:6,overflow:"hidden"}}>
-                    <div style={{height:"100%",width:`${authPct}%`,background:C.success[400],borderRadius:999}}/>
-                  </div>
-                </div>
-                {/* Clinical Evidence — white box, bold labels, Image 1 & 3 style */}
-                <div style={{background:"#fff",border:`1px solid ${C.grey[300]}`,borderRadius:8,padding:"14px 16px",marginBottom:14}}>
-                  <div style={{fontSize:14,fontWeight:700,color:C.grey[800],fontFamily:font,marginBottom:12}}>Clinical Evidence</div>
-                  {[
-                    ["Hemoglobin",`${p.labs[0].value} g/dL at ${p.gestAge} – Meets ACOG threshold`],
-                    ["Ferritin",`${p.labs[1].value} ng/mL – Meets threshold`],
-                    ["Pregnancy",`Gestational age ${p.gestAge}, ${p.parity}`],
-                    ["Indication",`${attestedDx.split("–")[0].trim()} per ACOG Practice Bulletin #233`],
-                  ].map(([k,v])=>(
-                    <div key={k} style={{fontSize:14,color:C.grey[700],fontFamily:font,marginBottom:8,lineHeight:1.5}}>
-                      <strong style={{color:C.grey[800]}}>{k}:</strong> {v}
-                    </div>
-                  ))}
-                </div>
-                {/* References — EvidenceBox green */}
-                <EvidenceBox refs={[{title:"NCD 110.21 – Treatment of Iron Deficiency Anemia"},{title:"LCD L35012 – Intravenous Iron Therapy / ACOG Practice Bulletin #233"}]}/>
-              </div>
-            )}
-          </div>
-
-          <StepActions onBack={()=>setStep(0)} onNext={()=>setApproved(true)} nextLabel="Approve & Transmit to Pharmacy →"/>
+          <StepActions onBack={()=>setStep(1)} onNext={()=>setApproved(true)} nextLabel="Approve & Transmit to Pharmacy →"/>
         </div>}
 
       </div>
@@ -1333,12 +1333,96 @@ const IQAssistantPanel = ({p, onClose, expanded, onToggleExpand}) => {
   );
 };
 
+// ── Cancellation Success Toast ───────────────────────────────────
+const CancelSuccessToast = ({onClose}) => {
+  useEffect(() => {
+    const timer = setTimeout(onClose, 4000);
+    return () => clearTimeout(timer);
+  }, [onClose]);
+  return (
+    <div style={{position:"fixed",bottom:24,right:24,zIndex:400,display:"flex",alignItems:"center",gap:10,background:C.success[400],color:"#fff",borderRadius:10,padding:"12px 20px",boxShadow:"0 8px 24px rgba(56,128,50,0.3)",fontFamily:font,fontSize:13,fontWeight:600}}>
+      <CheckCircle2 size={18} color="#fff"/>
+      The follow-up visit was cancelled.
+      <button onClick={onClose} style={{background:"transparent",border:"none",color:"#fff",cursor:"pointer",fontSize:16,lineHeight:1,padding:0,marginLeft:4,opacity:0.8}}>✕</button>
+    </div>
+  );
+};
+
+// ── Cancel Visit Modal (AC4/AC5) ─────────────────────────────────
+const CancelVisitModal = ({visit, patient, episode, onCancel, onKeep}) => {
+  const [selectedReason, setSelectedReason] = useState(null);
+  if (!visit || !patient) return null;
+  const ga = episode ? gaAtVisit(episode, visit.date) : null;
+  const gaText = ga ? (ga.postpartum ? `${ga.weeks}w postpartum` : ga.label) : "—";
+
+  return (
+    <div style={{position:"fixed",inset:0,zIndex:350,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.5)",backdropFilter:"blur(4px)"}} onClick={onKeep}>
+      <div style={{width:480,maxHeight:"88vh",background:C.grey[100],borderRadius:16,display:"flex",flexDirection:"column",boxShadow:"0 24px 80px rgba(0,0,0,0.25)",overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
+
+        {/* Header */}
+        <div style={{padding:"16px 20px",borderBottom:`1px solid ${C.grey[300]}`,display:"flex",alignItems:"center",gap:12,flexShrink:0,background:"#fff"}}>
+          <div style={{width:36,height:36,borderRadius:10,background:C.error[100],display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+            <X size={18} color={C.error[400]} strokeWidth={2.5}/>
+          </div>
+          <div style={{flex:1}}>
+            <div style={{fontSize:16,fontWeight:700,color:C.grey[800],fontFamily:font,lineHeight:1.2}}>Cancel Visit</div>
+            <div style={{fontSize:12,color:C.grey[600],fontFamily:font,marginTop:2}}>
+              {formatDate(visit.date)} · {patient.name} · MRN {patient.id}
+              {gaText !== "—" && ` · ${gaText}`}
+            </div>
+          </div>
+          <button onClick={onKeep} style={{width:32,height:32,borderRadius:8,background:C.grey[200],border:"none",color:C.grey[600],fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontFamily:font,lineHeight:1}}>✕</button>
+        </div>
+
+        {/* Body */}
+        <div style={{flex:1,overflowY:"auto",padding:"18px 20px",background:"#fff"}}>
+          <div style={{marginBottom:16}}>
+            <div style={{display:"flex",alignItems:"center",gap:4,marginBottom:10}}>
+              <span style={{fontSize:13,fontWeight:700,color:C.grey[800],fontFamily:font}}>Cancellation Reason</span>
+              <span style={{fontSize:12,color:C.error[400],fontFamily:font,fontWeight:700}}>*</span>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:6}}>
+              {CANCELLATION_REASONS.map(reason => {
+                const selected = selectedReason === reason;
+                return (
+                  <div key={reason} onClick={()=>setSelectedReason(reason)} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",border:`1px solid ${selected?C.primary[500]:C.grey[300]}`,borderRadius:8,cursor:"pointer",background:selected?C.primary[100]:"#fff",transition:"all 0.12s"}}>
+                    <div style={{width:18,height:18,borderRadius:"50%",border:`2px solid ${selected?C.primary[500]:C.grey[400]}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                      {selected && <div style={{width:9,height:9,borderRadius:"50%",background:C.primary[500]}}/>}
+                    </div>
+                    <span style={{fontSize:13,color:selected?C.primary[600]:C.grey[700],fontFamily:font,fontWeight:selected?600:400}}>{reason}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div style={{background:C.grey[200],border:`1px solid ${C.grey[300]}`,borderRadius:8,padding:"10px 14px",marginBottom:8}}>
+            <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",color:C.grey[500],fontFamily:font,marginBottom:4}}>Visit Details</div>
+            <div style={{fontSize:12,color:C.grey[700],fontFamily:font,lineHeight:1.5}}>
+              <div><strong style={{color:C.grey[800]}}>Type:</strong> {visit.type}</div>
+              <div><strong style={{color:C.grey[800]}}>Provider:</strong> {visit.provider}</div>
+              <div><strong style={{color:C.grey[800]}}>Location:</strong> {visit.location}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div style={{padding:"12px 20px",borderTop:`1px solid ${C.grey[300]}`,display:"flex",justifyContent:"flex-end",gap:8,flexShrink:0,background:"#fff"}}>
+          <Button variant="secondary" size="sm" onClick={onKeep}>Keep Visit</Button>
+          <Button variant="cta" size="sm" onClick={()=>onCancel(selectedReason)} disabled={!selectedReason} style={!selectedReason?{opacity:0.5,cursor:"not-allowed"}:null}>
+            <X size={14} strokeWidth={3}/> Cancel Visit
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ── Patient Header — episode-scoped, shown across all tabs ───────
 const PatientHeader = ({p, episode, onOpenIQ, onBack}) => {
   const ep = episode || getEpisode(null);
-  const mhr = p._mhr;
-  const tier = getMaternalRiskTier(mhr.score);
   const ga = episode ? gestationalAge(episode) : null;
+  const next = episode ? nextVisit(visitsForEpisode(episode.id)) : null;
   const gaLabel = ga ? (ga.postpartum ? `${ga.weeks} weeks postpartum` : `${ga.weeks}w${ga.days}d`) : p.gestAge;
   const due = episode ? dueDateLabel(episode) : null;
   return (
@@ -1354,6 +1438,8 @@ const PatientHeader = ({p, episode, onOpenIQ, onBack}) => {
           {episode && episode.status==="postpartum" && <span style={{fontSize:10,fontWeight:600,color:C.secondary[500],background:C.secondary[100],border:`1px solid ${C.secondary[300]}`,borderRadius:4,padding:"2px 7px",fontFamily:font}}>Postpartum</span>}
         </div>
         <div style={{display:"flex",alignItems:"center",gap:4,marginBottom:0,flexWrap:"wrap"}}>
+          <CalendarDays size={11} color={C.grey[500]}/><span style={{fontSize:12,fontWeight:700,color:C.grey[700],fontFamily:font}}>Visit Date</span><span style={{fontSize:12,color:next?C.grey[700]:C.grey[500],fontFamily:font,marginLeft:3}}>{next ? formatDate(next.date) : "No upcoming visit"}</span>
+          <span style={{fontSize:12,color:C.grey[400],margin:"0 2px"}}>·</span>
           <Stethoscope size={11} color={C.grey[500]}/><span style={{fontSize:12,fontWeight:600,color:C.grey[700],fontFamily:font}}>{p.provider}</span>
           <span style={{fontSize:12,color:C.grey[400],margin:"0 2px"}}>·</span>
           <Hash size={11} color={C.grey[500]}/><span style={{fontSize:12,color:C.grey[700],fontFamily:font}}>MRN {p.id}</span>
@@ -1365,8 +1451,7 @@ const PatientHeader = ({p, episode, onOpenIQ, onBack}) => {
           <span style={{fontSize:12,fontWeight:700,color:C.grey[700],fontFamily:font}}>{due.kind === "delivered" ? "Postpartum" : "EDD"}</span><span style={{fontSize:12,color:C.grey[700],fontFamily:font,marginLeft:3}}>{due.kind === "delivered" ? `${ga.weeks} weeks postpartum` : formatDate(episode.edd)}</span>
           <span style={{fontSize:12,color:C.grey[400],margin:"0 2px"}}>·</span>
           <span style={{fontSize:12,color:C.grey[500],fontFamily:font}}>Obstetric History</span><span style={{fontSize:12,fontWeight:600,color:C.grey[700],fontFamily:font,marginLeft:3}}>{episode?`G${episode.gravida}P${episode.para}`:p.parity}</span>
-          <span style={{fontSize:12,color:C.grey[400],margin:"0 2px"}}>·</span>
-          <span style={{fontSize:12,fontWeight:700,color:tier.color,fontFamily:font}}>Risk {mhr.score}/74</span><span style={{fontSize:11,fontWeight:600,color:tier.color,background:tier.color+"22",borderRadius:4,padding:"1px 6px",fontFamily:font,marginLeft:4}}>{tier.label}</span>
+
         </div>
       </div>
       {/* IQ Assistant button — matches screenshot: flat teal, pill radius */}
@@ -1399,7 +1484,15 @@ const PatientWorkspace = ({patient,allPatients,episodeId,onBack,onSelectPatient,
   const [zone, setZone]         = useState(defaultZone==="ai"?"overview":defaultZone);
   const [iqOpen, setIqOpen]     = useState(false);
   const [iqExpanded, setIqExpanded] = useState(false);
+  const [cancelTarget, setCancelTarget] = useState(null);
+  const [showCancelToast, setShowCancelToast] = useState(false);
   const episode = episodeId ? getEpisode(episodeId) : null;
+  const handleCancelVisit = (visit, reason) => {
+    const vIdx = VISITS.findIndex(v => v.id === visit.id);
+    if (vIdx >= 0) { VISITS[vIdx] = {...VISITS[vIdx], status:"cancelled", cancellationReason:reason, cancelledBy:"Clinical IQ User", cancelledAt:new Date().toISOString()}; }
+    setCancelTarget(null);
+    setShowCancelToast(true);
+  };
   return (
     <div style={{display:"flex",flexDirection:"column",flex:1,minHeight:0,fontFamily:font,background:C.grey[200]}}>
       {/* Top nav */}
@@ -1429,21 +1522,24 @@ const PatientWorkspace = ({patient,allPatients,episodeId,onBack,onSelectPatient,
             <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",minWidth:0}}>
               {zone==="overview" && <OverviewZone p={patient} onNavigate={setZone}/>}
               {zone==="cp"       && <CarePlanZone p={patient}/>}
-              {zone==="visits"   && <VisitsZone p={patient} episode={episode}/>}
+              {zone==="visits"   && <VisitsZone p={patient} episode={episode} onCancelVisit={(v)=>setCancelTarget({visit:v,patient:patient,episode:episode})}/>}
             </div>
             {iqOpen && <IQAssistantPanel p={patient} onClose={()=>setIqOpen(false)} expanded={iqExpanded} onToggleExpand={()=>setIqExpanded(e=>!e)}/>}
           </div>
         </div>
+        {cancelTarget && <CancelVisitModal visit={cancelTarget.visit} patient={cancelTarget.patient} episode={cancelTarget.episode} onKeep={()=>setCancelTarget(null)} onCancel={(reason)=>handleCancelVisit(cancelTarget.visit,reason)} />}
+        {showCancelToast && <CancelSuccessToast onClose={()=>setShowCancelToast(false)} />}
       </div>
     </div>
   );
 };
 
 // ── Visit Detail Modal (opens from Visits tab; returns without losing place) ──
-const VisitDetailModal = ({visit, episode, onClose}) => {
+const VisitDetailModal = ({visit, episode, onClose, onCancelVisit}) => {
   if (!visit) return null;
   const isFuture = visit.status === "scheduled";
   const isPast = visit.status === "completed";
+  const isCancelled = visit.status === "cancelled";
   const ga = episode ? gaAtVisit(episode, visit.date) : null;
   const gaText = ga ? (ga.postpartum ? `${ga.weeks}w postpartum` : ga.label) : "—";
 
@@ -1467,7 +1563,7 @@ const VisitDetailModal = ({visit, episode, onClose}) => {
             <div style={{fontSize:16,fontWeight:700,color:C.grey[800],fontFamily:font,lineHeight:1.2}}>{visit.type}</div>
             <div style={{fontSize:12,color:C.grey[600],fontFamily:font,marginTop:2}}>{formatDate(visit.date)} · {gaText} · {visit.provider}</div>
           </div>
-          <span style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",color:isFuture?C.primary[500]:C.success[400],background:isFuture?C.primary[100]:C.success[100],borderRadius:4,padding:"3px 8px",fontFamily:font}}>{isFuture?"Scheduled":"Completed"}</span>
+          <span style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",color:isFuture?C.primary[500]:isCancelled?C.error[400]:C.success[400],background:isFuture?C.primary[100]:isCancelled?C.error[100]:C.success[100],borderRadius:4,padding:"3px 8px",fontFamily:font}}>{isFuture?"Scheduled":isCancelled?"Cancelled":"Completed"}</span>
           <button onClick={onClose} style={{width:32,height:32,borderRadius:8,background:C.grey[200],border:"none",color:C.grey[600],fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontFamily:font,lineHeight:1}}><X size={16}/></button>
         </div>
 
@@ -1532,19 +1628,21 @@ const VisitDetailModal = ({visit, episode, onClose}) => {
             </a>
           </div>
 
-          {/* Future visit stubbed actions */}
+          {/* Future visit actions */}
           {isFuture && (
-            <div style={{marginTop:18,padding:"14px",background:C.grey[200],borderRadius:10,border:`1px dashed ${C.grey[400]}`}}>
+            <div style={{marginTop:18,padding:"14px",background:C.grey[200],borderRadius:10,border:`1px solid ${C.grey[300]}`}}>
               <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",color:C.grey[500],fontFamily:font,marginBottom:10}}>Visit Actions</div>
               <div style={{display:"flex",gap:8}}>
-                {["Reschedule","Cancel","Confirm"].map(action => (
+                {["Reschedule","Confirm"].map(action => (
                   <button key={action} disabled style={{display:"flex",alignItems:"center",gap:5,background:C.grey[300],color:C.grey[500],border:"none",borderRadius:6,padding:"7px 14px",fontSize:12,fontWeight:600,cursor:"not-allowed",fontFamily:font,opacity:0.7}}>
                     {action}
                     <span style={{fontSize:9,fontWeight:400,fontStyle:"italic"}}>soon</span>
                   </button>
                 ))}
+                <button onClick={()=>{onClose();onCancelVisit(visit);}} style={{display:"flex",alignItems:"center",gap:5,background:C.error[100],color:C.error[400],border:`1px solid ${C.error[400]}55`,borderRadius:6,padding:"7px 14px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:font}}>
+                  <X size={13} strokeWidth={2.5}/> Cancel Visit
+                </button>
               </div>
-              <div style={{fontSize:11,color:C.grey[500],fontFamily:font,marginTop:8,fontStyle:"italic"}}>Write-back to Epic is coming soon — actions are not yet active in this prototype.</div>
             </div>
           )}
         </div>
@@ -1554,13 +1652,14 @@ const VisitDetailModal = ({visit, episode, onClose}) => {
 };
 
 // ── Visits Zone — Next / Future / Past for the selected episode ────
-const VisitsZone = ({p, episode}) => {
+const VisitsZone = ({p, episode, onCancelVisit}) => {
   const [selectedVisit, setSelectedVisit] = useState(null);
   const ep = episode;
   const allVisits = ep ? visitsForEpisode(ep.id) : [];
   const nv = nextVisit(allVisits);
   const future = futureVisits(allVisits);
   const past = pastVisits(allVisits);
+  const cancelled = cancelledVisits(allVisits);
 
   const SectionHeader = ({label, count, icon}) => (
     <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:10}}>
@@ -1574,20 +1673,23 @@ const VisitsZone = ({p, episode}) => {
     const ga = ep ? gaAtVisit(ep, v.date) : null;
     const gaText = ga ? (ga.postpartum ? `${ga.weeks}w PP` : ga.label) : "";
     const isPastVisit = v.status === "completed";
+    const isCancelledVisit = v.status === "cancelled";
     return (
-      <div onClick={()=>setSelectedVisit(v)} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:isNext?C.primary[100]:"#fff",border:`1px solid ${isNext?C.primary[300]:C.grey[300]}`,borderRadius:isNext?10:8,cursor:"pointer",transition:"box-shadow 0.12s",marginBottom:isNext?0:6}}
+      <div onClick={()=>setSelectedVisit(v)} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:isNext?C.primary[100]:isCancelledVisit?C.grey[200]:"#fff",border:`1px solid ${isNext?C.primary[300]:isCancelledVisit?C.grey[400]:C.grey[300]}`,borderRadius:isNext?10:8,cursor:"pointer",transition:"box-shadow 0.12s",marginBottom:isNext?0:6,opacity:isCancelledVisit?0.7:1}}
         onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 2px 8px rgba(0,0,0,0.08)";}}
         onMouseLeave={e=>{e.currentTarget.style.boxShadow="none";}}>
         {isNext && <div style={{width:4,alignSelf:"stretch",background:C.primary[500],borderRadius:2,flexShrink:0}}/>}
         <div style={{flexShrink:0,minWidth:110}}>
-          <div style={{fontSize:13,fontWeight:700,color:isNext?C.primary[600]:C.grey[800],fontFamily:font}}>{formatDate(v.date)}</div>
-          {isPastVisit && gaText && <div style={{fontSize:11,color:C.grey[500],fontFamily:font,marginTop:2}}>{gaText}</div>}
+          <div style={{fontSize:13,fontWeight:700,color:isNext?C.primary[600]:isCancelledVisit?C.grey[500]:C.grey[800],fontFamily:font}}>{formatDate(v.date)}</div>
+          {(isPastVisit||isCancelledVisit) && gaText && <div style={{fontSize:11,color:C.grey[500],fontFamily:font,marginTop:2}}>{gaText}</div>}
         </div>
         <div style={{width:"1px",alignSelf:"stretch",background:C.grey[300],flexShrink:0}}/>
         <div style={{flex:1,minWidth:0}}>
           <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2}}>
-            <span style={{fontSize:13,fontWeight:600,color:C.secondary[500],fontFamily:font}}>{v.type}</span>
+            <span style={{fontSize:13,fontWeight:600,color:isCancelledVisit?C.grey[500]:C.secondary[500],fontFamily:font}}>{v.type}</span>
             {isNext && <span style={{fontSize:9,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",color:C.primary[500],background:C.primary[100],borderRadius:3,padding:"1px 5px",fontFamily:font}}>Next</span>}
+            {isCancelledVisit && <span style={{fontSize:9,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",color:C.error[400],background:C.error[100],borderRadius:3,padding:"1px 5px",fontFamily:font}}>Cancelled</span>}
+            {isCancelledVisit && v.cancellationReason && <span style={{fontSize:11,color:C.grey[500],fontFamily:font,fontStyle:"italic"}}>{v.cancellationReason}</span>}
           </div>
           <div style={{fontSize:12,color:C.grey[600],fontFamily:font,lineHeight:1.4,marginBottom:2}}>{visitOneLiner(v)}</div>
           <div style={{display:"flex",alignItems:"center",gap:8,fontSize:11,color:C.grey[500],fontFamily:font}}>
@@ -1652,14 +1754,44 @@ const VisitsZone = ({p, episode}) => {
         )}
       </div>
 
-      {selectedVisit && <VisitDetailModal visit={selectedVisit} episode={ep} onClose={()=>setSelectedVisit(null)}/>}
+      {selectedVisit && <VisitDetailModal visit={selectedVisit} episode={ep} onClose={()=>setSelectedVisit(null)} onCancelVisit={onCancelVisit}/>}
     </div>
   );
 };
 
+// ── Worklist Row Actions Menu (AC1) ──────────────────────────────
+const RowActionsMenu = ({open, onToggle, onCancelVisit, hasScheduledVisit}) => {
+  const ref = useRef(null);
+  useEffect(() => {
+    if(!open) return;
+    const handler = (e) => { if(ref.current && !ref.current.contains(e.target)) onToggle(); };
+    document.addEventListener("mousedown",handler);
+    return () => document.removeEventListener("mousedown",handler);
+  }, [open, onToggle]);
+  if(!hasScheduledVisit) return <td style={{padding:"12px 16px",width:40}}/>;
+  return (
+    <td style={{padding:"12px 16px",width:40,position:"relative"}} onClick={e=>e.stopPropagation()} ref={ref}>
+      <button onClick={onToggle} aria-label="Row actions" title="Actions" style={{display:"flex",alignItems:"center",justifyContent:"center",width:28,height:28,borderRadius:6,border:"none",background:open?C.grey[300]:"transparent",cursor:"pointer",color:C.grey[600]}}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+      </button>
+      {open && (
+        <div style={{position:"absolute",right:16,top:"calc(100% + 2px)",zIndex:50,background:C.grey[100],border:`1px solid ${C.grey[300]}`,borderRadius:8,boxShadow:"0 8px 24px rgba(0,0,0,0.14)",padding:"4px 0",minWidth:170}}>
+          <button onClick={()=>{onToggle();onCancelVisit();}} style={{width:"100%",display:"flex",alignItems:"center",gap:8,padding:"9px 14px",border:0,background:"transparent",color:C.error[400],fontSize:13,fontWeight:600,textAlign:"left",cursor:"pointer",fontFamily:font}}>
+            <X size={14} strokeWidth={2.5} color={C.error[400]}/>
+            Cancel Visit
+          </button>
+        </div>
+      )}
+    </td>
+  );
+};
+
 // ── Worklist Row (same columns as BloodHealth, OB data) ───────────
-const PatientRow = ({p, onOpen, onOpenACOG}) => {
+const PatientRow = ({p, onOpen, onOpenACOG, onCancelVisit}) => {
+  const [menuOpen, setMenuOpen] = useState(false);
   const ferC = p.labs[1].status==="critical"?C.error[400]:p.labs[1].status==="high"||p.labs[1].status==="borderline"?C.orange[400]:C.grey[600];
+  const tsatLab = p.labs.find(l=>l.label==="Transferrin Sat");
+  const tsatC = !tsatLab || tsatLab.status==="missing" ? C.grey[500] : tsatLab.status==="critical" ? C.error[400] : tsatLab.status==="high" || tsatLab.status==="borderline" ? C.orange[400] : C.grey[600];
   const ep = p._ep;
   const nv = ep ? ep.nextVisit : null;
   const noUpcoming = ep && ep.hasNoUpcoming;
@@ -1699,7 +1831,7 @@ const PatientRow = ({p, onOpen, onOpenACOG}) => {
         </td>
 
         {/* LAB VALUES */}
-        <td style={{padding:"12px 16px",minWidth:190}}>
+        <td style={{padding:"12px 16px",minWidth:250}}>
           <div style={{display:"flex",gap:14}}>
             <div>
               <div style={{fontSize:12,fontWeight:700,color:C.grey[600],textTransform:"uppercase",letterSpacing:"0.06em",fontFamily:font,marginBottom:3}}>HGB</div>
@@ -1709,6 +1841,11 @@ const PatientRow = ({p, onOpen, onOpenACOG}) => {
             <div>
               <div style={{fontSize:12,fontWeight:700,color:C.grey[600],textTransform:"uppercase",letterSpacing:"0.06em",fontFamily:font,marginBottom:3}}>Ferritin</div>
               <div style={{display:"flex",alignItems:"baseline",gap:2}}><span style={{fontSize:20,fontWeight:700,color:ferC,fontFamily:font,letterSpacing:"-0.01em"}}>{p.labs[1].value}</span><span style={{fontSize:12,color:C.grey[500],fontFamily:font}}>ng/mL</span></div>
+            </div>
+            <div style={{width:"0.5px",background:C.grey[300],alignSelf:"stretch"}}/>
+            <div>
+              <div style={{fontSize:12,fontWeight:700,color:C.grey[600],textTransform:"uppercase",letterSpacing:"0.06em",fontFamily:font,marginBottom:3}}>TSAT</div>
+              <div style={{display:"flex",alignItems:"baseline",gap:2}}><span style={{fontSize:20,fontWeight:700,color:tsatC,fontFamily:font,letterSpacing:"-0.01em"}}>{tsatLab?.value ?? "—"}</span><span style={{fontSize:12,color:C.grey[500],fontFamily:font}}>%</span></div>
             </div>
           </div>
         </td>
@@ -1746,6 +1883,8 @@ const PatientRow = ({p, onOpen, onOpenACOG}) => {
           <div style={{fontSize:14,fontWeight:600,color:C.grey[800],fontFamily:font}}>{p.provider}</div>
         </td>
 
+        {/* ELLIPSIS ACTIONS */}
+        <RowActionsMenu open={menuOpen} onToggle={()=>setMenuOpen(o=>!o)} onCancelVisit={onCancelVisit} hasScheduledVisit={!!nv} />
       </tr>
     </>
   );
@@ -1758,6 +1897,8 @@ export default function App() {
   const [defaultZone, setDefaultZone]     = useState("overview");
   const [activeEpisodeId, setActiveEpisodeId] = useState(null);
   const [acogPatient, setAcogPatient]     = useState(null);
+  const [worklistCancelTarget, setWorklistCancelTarget] = useState(null);
+  const [showCancelToast, setShowCancelToast] = useState(false);
   const [facilityFilter, setFacilityFilter] = useState([...FACILITIES]);
   const [search, setSearch]        = useState("");
   const [ctFilter, setCtFilter]    = useState("All Case Types");
@@ -1784,7 +1925,7 @@ export default function App() {
   const DATE_FILTER_OPTIONS = ["Visit Date","EDD","Custom Date Range"];
   const SORT_BY_OPTIONS = ["Next Visit Date","Severity"];
   const SEVERITY_RANK = {"Low":1,"Intermediate":2,"High":3,"Very High":4};
-  const STATUS_OPTIONS = ["ALL","Active","In Progress","Not Started","Generated","Follow Up","Complete","Inactive","Cancelled"];
+  const STATUS_OPTIONS = ["ALL","Active","In Progress","Not Started","Complete","Inactive","Cancelled"];
   const statusMap = {"Active":"active","In Progress":"in-progress","Not Started":"pending","Generated":"generated","Follow Up":"follow-up","Complete":"complete","Inactive":"inactive","Cancelled":"cancelled"};
   const parseDate = (value) => value.includes("-")
     ? new Date(`${value}T00:00:00`)
@@ -1797,7 +1938,7 @@ export default function App() {
       </div></>
     );
 
-  const COLS = ["PATIENT / GA","NEXT VISIT","LAB VALUES","BLOOD PRESSURE","MATERNAL HEALTH RISK","ACTIVE ORDER","PROVIDER"];
+  const COLS = ["PATIENT / GA","NEXT VISIT","LAB VALUES","BLOOD PRESSURE","MATERNAL HEALTH RISK","ACTIVE ORDER","PROVIDER",""];
 
   // Build one row per active episode from the mock episodes module
   const activeEpisodes = getActiveEpisodes();
@@ -1932,7 +2073,8 @@ export default function App() {
                   ? <tr><td colSpan={COLS.length} style={{padding:24,textAlign:"center",fontSize:14,color:C.grey[500],fontFamily:font}}>No patients match</td></tr>
                   : displayedPatients.map(p => <PatientRow key={p._ep?._id||p.id} p={p}
                       onOpen={(p,zone="overview",episodeId=null)=>{if(tableScrollRef.current) savedScrollRef.current=tableScrollRef.current.scrollTop;setActivePatient(p);setActiveEpisodeId(episodeId);setDefaultZone(zone);setScreen("workspace");}}
-                      onOpenACOG={p=>setAcogPatient(p)}/>)
+                      onOpenACOG={p=>setAcogPatient(p)}
+                      onCancelVisit={()=>setWorklistCancelTarget({visit:p._ep?.nextVisit, patient:p, episode:p._ep})}/>)
                 }
               </tbody>
             </table>
@@ -1948,6 +2090,9 @@ export default function App() {
 
       {/* MHR Modal */}
       {acogPatient && <MHRModal p={acogPatient} onClose={()=>setAcogPatient(null)}/>}
+      {/* Cancel Visit Modal from Worklist */}
+      {worklistCancelTarget && worklistCancelTarget.visit && <CancelVisitModal visit={worklistCancelTarget.visit} patient={worklistCancelTarget.patient} episode={worklistCancelTarget.episode} onKeep={()=>setWorklistCancelTarget(null)} onCancel={(reason)=>{const vIdx=VISITS.findIndex(v=>v.id===worklistCancelTarget.visit.id);if(vIdx>=0){VISITS[vIdx]={...VISITS[vIdx],status:"cancelled",cancellationReason:reason,cancelledBy:"Clinical IQ User",cancelledAt:new Date().toISOString()};}setWorklistCancelTarget(null);setShowCancelToast(true);}} />}
+      {showCancelToast && <CancelSuccessToast onClose={()=>setShowCancelToast(false)} />}
     </div></>
   );
 }

@@ -95,10 +95,17 @@ export const futureVisits = (visits) => {
     .sort((a, b) => a.date.localeCompare(b.date));
 };
 
-// Past visits: all completed, most-recent-first
+// Past visits: all completed or cancelled, most-recent-first
 export const pastVisits = (visits) => {
   return visits
-    .filter(v => v.status === "completed")
+    .filter(v => v.status === "completed" || v.status === "cancelled")
+    .sort((a, b) => b.date.localeCompare(a.date));
+};
+
+// Cancelled visits: all cancelled, most-recent-first
+export const cancelledVisits = (visits) => {
+  return visits
+    .filter(v => v.status === "cancelled")
     .sort((a, b) => b.date.localeCompare(a.date));
 };
 
