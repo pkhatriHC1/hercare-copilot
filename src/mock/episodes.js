@@ -71,10 +71,10 @@ export const gestationalAge = (episode) => {
 // PLACEHOLDER risk-tier bands — pending clinical confirmation.
 // Low 0–18, Moderate 19–36, High 37–55, Critical 56–74
 export const RISK_TIERS = [
-  { min: 0,  label: "Low",      color: "#388032" },
-  { min: 19, label: "Moderate", color: "#92600A" },
-  { min: 37, label: "High",     color: "#F58126" },
-  { min: 56, label: "Critical", color: "#B00A2F" },
+  { min: 0,  label: "Low" },
+  { min: 19, label: "Moderate" },
+  { min: 37, label: "High" },
+  { min: 56, label: "Critical" },
 ];
 
 export const getMaternalRiskTier = (score) => {
