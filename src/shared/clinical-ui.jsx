@@ -18,7 +18,7 @@ export function MhrBadge({ cat }) {
 export function MhrScore({ mhr, size = "sm" }) {
   const t = MHR_TIER_STYLE[mhr.cat] ?? MHR_TIER_STYLE.Low;
   return (
-    <span className="flex flex-col items-start gap-4">
+    <span className="flex flex-col items-center gap-4">
       <Gauge
         value={mhr.score}
         max={mhr.maxPossible}
@@ -57,7 +57,7 @@ export function Measure({ label, value, unit, tone, missing, size = "md" }) {
         </span>
       ) : (
         <span className="flex items-baseline gap-4">
-          <span className={`${size === "lg" ? "text-24" : "text-20"} font-semibold leading-tight tabular-nums ${tone ?? "text-[color:var(--hc-color-text-primary)]"}`}>{value}</span>
+          <span className={`${size === "lg" ? "text-24" : size === "sm" ? "text-16" : "text-20"} font-semibold leading-tight tabular-nums ${tone ?? "text-[color:var(--hc-color-text-primary)]"}`}>{value}</span>
           {unit && <span className="text-12 text-[color:var(--hc-color-text-supporting)]">{unit}</span>}
         </span>
       )}
@@ -75,4 +75,29 @@ export function careStatus(p) {
   if (p.carePlanStatus === "in-progress") return { label: "Care recommendation in progress", variant: "warning" };
   if (p.carePlanStatus === "pending") return { label: "Care recommendation not started", variant: "danger" };
   return null;
+}
+
+/** Compact readings list: label on the left, value and unit on the right, one per line. */
+export function Readings({ items }) {
+  return (
+    <dl className="grid grid-cols-[auto_1fr] items-baseline gap-x-12 gap-y-4">
+      {items.map(({ label, value, unit, tone, missing }) => (
+        <div key={label} className="contents">
+          <dt className="text-12 text-[color:var(--hc-color-text-supporting)]">{label}</dt>
+          <dd className="flex items-baseline gap-4">
+            {missing ? (
+              <span className="flex items-center gap-4 text-14 text-[color:var(--hc-color-text-tertiary)]">
+                <FlaskConicalOff className="size-12" aria-hidden /> Missing
+              </span>
+            ) : (
+              <>
+                <span className={`text-14 font-semibold tabular-nums ${tone ?? "text-[color:var(--hc-color-text-primary)]"}`}>{value}</span>
+                {unit && <span className="text-12 text-[color:var(--hc-color-text-supporting)]">{unit}</span>}
+              </>
+            )}
+          </dd>
+        </div>
+      ))}
+    </dl>
+  );
 }

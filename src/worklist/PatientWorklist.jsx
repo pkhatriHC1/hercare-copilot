@@ -5,7 +5,7 @@ import { FilterBar, PageTemplate } from "@hc1com/design-system/patterns";
 import { CASE_TYPES, FACILITIES, PATIENTS } from "../lib/clinical";
 import { VISIT_TYPES, formatDate, getActiveEpisodes } from "../mock/episodes";
 import { DateRangeFilter, MultiFilter, toIso } from "../shared/filters";
-import { Measure, MhrScore, bpTone, careStatus, findLab, isMissing, labTone } from "../shared/clinical-ui";
+import { MhrScore, Readings, bpTone, careStatus, findLab, isMissing, labTone } from "../shared/clinical-ui";
 
 const CASE_TYPE_OPTIONS = CASE_TYPES.slice(1).map(o => ({ value: o, label: o }));
 const VISIT_TYPE_OPTIONS = VISIT_TYPES.map(o => ({ value: o, label: o }));
@@ -118,16 +118,16 @@ export function PatientWorklist({ onOpen, onOpenMhr, onCancelVisit }) {
           </EmptyState>
         ) : (
           <Table density="relaxed">
-            <Table.Content>
+            <Table.Content className="[&_table]:table-fixed">
               <Table.Header>
                 <Table.Row>
-                  <Table.Head width={200}>Patient</Table.Head>
-                  <Table.Head width={160}>Next visit</Table.Head>
-                  <Table.Head width={200}>Labs and BP</Table.Head>
-                  <Table.Head width={120}>Maternal health risk</Table.Head>
+                  <Table.Head width="21%">Patient</Table.Head>
+                  <Table.Head width="17%">Next visit</Table.Head>
+                  <Table.Head width="15%">Labs and BP</Table.Head>
+                  <Table.Head width="11%">Risk score</Table.Head>
                   <Table.Head>Active order</Table.Head>
-                  <Table.Head width={104}>Provider</Table.Head>
-                  <Table.Head width={56}><span className="sr-only">Actions</span></Table.Head>
+                  <Table.Head width="10%">Provider</Table.Head>
+                  <Table.Head width={48}><span className="sr-only">Actions</span></Table.Head>
                 </Table.Row>
               </Table.Header>
               <Table.Body>
@@ -163,10 +163,10 @@ function PatientRow({ p, onOpen, onOpenMhr, onCancelVisit }) {
         <div className="flex flex-col gap-4">
           <span className="text-16 font-semibold text-[color:var(--hc-color-text-primary)]">{p.name}</span>
           <span className="text-14 tabular-nums text-[color:var(--hc-color-text-supporting)]">MRN {p.id} · Age {p.age}</span>
-          <span className="text-14 tabular-nums text-[color:var(--hc-color-text-supporting)]">{ep.due.label}</span>
+          <span className="text-14 tabular-nums text-[color:var(--hc-color-text-supporting)]">
+            {ep.parityLabel} · {ep.gaLabel} · {ep.due.label}
+          </span>
           <div className="flex flex-wrap gap-4 pt-4">
-            <Badge variant="neutral" appearance="outline" size="sm">{ep.parityLabel}</Badge>
-            <Badge variant="neutral" appearance="outline" size="sm">{ep.gaLabel}</Badge>
             <Badge variant="neutral" appearance="outline" size="sm">{ep.obType}</Badge>
             {ep.status === "postpartum" && ep.obType !== "Postpartum" && <Badge variant="info" appearance="soft" size="sm">Postpartum</Badge>}
           </div>
@@ -176,21 +176,20 @@ function PatientRow({ p, onOpen, onOpenMhr, onCancelVisit }) {
         {ep.hasNoUpcoming ? (
           <Badge variant="warning" appearance="soft" size="sm">No upcoming visit</Badge>
         ) : nv ? (
-          <div className="flex flex-col gap-4">
+          <div className="flex min-w-0 flex-col gap-4">
             <span className="text-14 font-semibold tabular-nums text-[color:var(--hc-color-text-primary)]">{formatDate(nv.date)}</span>
             <span className="text-14 font-medium text-[color:var(--hc-color-action-primary)]">{nv.type}</span>
-            <span className="text-12 text-[color:var(--hc-color-text-supporting)]">{nv.provider}</span>
-            <span className="text-12 text-[color:var(--hc-color-text-supporting)]">{nv.location}</span>
+            <span className="text-12 text-[color:var(--hc-color-text-supporting)]">{nv.provider} · {nv.location}</span>
           </div>
         ) : "—"}
       </Table.Cell>
       <Table.Cell truncate={false}>
-        <div className="grid grid-cols-2 gap-x-16 gap-y-12">
-          <Measure label="Hgb" value={p.labs[0].value} unit="g/dL" tone={labTone(p.labs[0].status)} />
-          <Measure label="Ferritin" value={ferritin?.value} unit="ng/mL" tone={labTone(ferritin?.status)} missing={isMissing(ferritin)} />
-          <Measure label="TSAT" value={tsat?.value} unit="%" tone={labTone(tsat?.status)} missing={isMissing(tsat)} />
-          <Measure label="BP" value={p.bp} unit="mmHg" tone={bpTone(p.bp)} />
-        </div>
+        <Readings items={[
+          { label: "Hgb", value: p.labs[0].value, unit: "g/dL", tone: labTone(p.labs[0].status) },
+          { label: "Ferritin", value: ferritin?.value, unit: "ng/mL", tone: labTone(ferritin?.status), missing: isMissing(ferritin) },
+          { label: "TSAT", value: tsat?.value, unit: "%", tone: labTone(tsat?.status), missing: isMissing(tsat) },
+          { label: "BP", value: p.bp, unit: "mmHg", tone: bpTone(p.bp) },
+        ]} />
       </Table.Cell>
       <Table.Cell truncate={false} onClick={e => e.stopPropagation()}>
         <button
@@ -199,7 +198,7 @@ function PatientRow({ p, onOpen, onOpenMhr, onCancelVisit }) {
           aria-label={`Maternal health risk score ${p._mhr.score} of ${p._mhr.maxPossible}, ${p._mhr.cat}. Show breakdown`}
           onClick={() => onOpenMhr(p)}
         >
-          <MhrScore mhr={p._mhr} />
+          <MhrScore mhr={p._mhr} size="md" />
         </button>
       </Table.Cell>
       <Table.Cell truncate={false}>
