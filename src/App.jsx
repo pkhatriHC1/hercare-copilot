@@ -7,6 +7,9 @@ import { PatientWorkspace } from "./workspace/PatientWorkspace";
 import { MhrDialog } from "./workspace/MhrDialog";
 import { CancelVisitDialog } from "./visits/CancelVisitDialog";
 import { VISITS, getEpisode } from "./mock/episodes";
+import { PATIENTS } from "./lib/clinical";
+import { expirePostpartumWindow, markEpisodeRead, markRead, startDemoFeed, unreadCount } from "./lib/postpartum";
+import { NotificationsDrawer } from "./postpartum/NotificationsDrawer";
 
 const time = () => new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 
@@ -22,10 +25,35 @@ export default function App() {
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [messages, setMessages] = useState([]);
 
+  /* Re-render when the postpartum rules move or discharge a patient; close episodes past the window on load. */
+  const [notesOpen, setNotesOpen] = useState(false);
+  const [listRequest, setListRequest] = useState(null);
+  useEffect(() => {
+    expirePostpartumWindow();
+    /* DEMO ONLY: Epic records "arrive" a few seconds after the page opens and are processed in the background. */
+    startDemoFeed(results => {
+      const moved = results.filter(r => r.result === "moved").length;
+      if (moved > 0) setToast(`${moved} patient${moved === 1 ? "" : "s"} moved to Postpartum from Epic records.`);
+    });
+    const bump = () => setVersion(v => v + 1);
+    window.addEventListener("postpartum-updated", bump);
+    return () => window.removeEventListener("postpartum-updated", bump);
+  }, []);
+
   const openPatient = (p, zone = "overview", epId = null) => {
+    if (epId) markEpisodeRead(epId);
     setPatient(p); setEpisodeId(epId); setDefaultZone(zone); setScreen("workspace");
   };
   const episode = episodeId ? getEpisode(episodeId) : null;
+
+  /* A notification opens the patient; a confirmation request opens the Active worklist, where it is resolved. */
+  const openNotification = n => {
+    markRead(n.id);
+    setNotesOpen(false);
+    if (n.kind === "confirm") { setScreen("worklist"); setListRequest({ list: "active", at: Date.now() }); return; }
+    const p = PATIENTS.find(x => x.id === n.patientId);
+    if (p) openPatient(p, n.kind === "moved" || n.kind === "updated" ? "visits" : "overview", n.episodeId);
+  };
 
   /* Cancelling marks the visit cancelled in the shared demo data, as in the original prototype. */
   const cancelVisit = reason => {
@@ -62,10 +90,10 @@ export default function App() {
   };
 
   return (
-    <ClinicalShell screen={screen} onNavigate={setScreen} onOpenAssistant={() => setAssistantOpen(true)}>
+    <ClinicalShell screen={screen} onNavigate={setScreen} onOpenAssistant={() => setAssistantOpen(true)} notifications={{ count: unreadCount(), onClick: () => setNotesOpen(true) }}>
       {/* The worklist stays mounted so its filters are kept when you come back from a patient. */}
       <div hidden={screen !== "worklist"}>
-        <PatientWorklist onOpen={openPatient} onOpenMhr={setMhrPatient} onCancelVisit={setCancelTarget} />
+        <PatientWorklist onOpen={openPatient} onOpenMhr={setMhrPatient} onCancelVisit={setCancelTarget} onToast={setToast} listRequest={listRequest} />
       </div>
       {screen === "workspace" && patient && (
         <PatientWorkspace
@@ -78,6 +106,7 @@ export default function App() {
         />
       )}
 
+      <NotificationsDrawer open={notesOpen} onOpenChange={setNotesOpen} onSelect={openNotification} />
       {mhrPatient && <MhrDialog p={mhrPatient} onClose={() => setMhrPatient(null)} />}
       {cancelTarget?.visit && (
         <CancelVisitDialog

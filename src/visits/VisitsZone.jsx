@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { CalendarDays, CheckCircle2, ChevronRight, Clock, MapPin, Plus, User } from "lucide-react";
 import { Alert, Badge, Button, Card, Tooltip } from "@hc1com/design-system";
+import { MhrBadge } from "../shared/clinical-ui";
 import { formatDate, futureVisits, gaAtVisit, nextVisit, pastVisits, visitOneLiner, visitsForEpisode } from "../mock/episodes";
 import { VisitDetailDialog } from "./VisitDetailDialog";
 
@@ -52,6 +53,7 @@ function VisitRow({ v, ep, isNext, onOpen }) {
         <span className="flex flex-wrap items-center gap-8">
           <span className="text-14 font-semibold text-[color:var(--hc-color-action-primary)]">{v.type}</span>
           {isNext && <Badge variant="primary" appearance="solid" size="xs">Next</Badge>}
+          {v.generated && <Badge variant="info" appearance="soft" size="xs">Postpartum follow-up</Badge>}
           {cancelled && <Badge variant="neutral" appearance="soft" size="xs">Cancelled</Badge>}
           {cancelled && v.cancellationReason && <span className="text-12 text-[color:var(--hc-color-text-supporting)]">{v.cancellationReason}</span>}
         </span>
@@ -102,6 +104,18 @@ export function VisitsZone({ episode: ep, onCancelVisit }) {
 
         <section className="flex flex-col gap-12">
           <SectionTitle icon={<CheckCircle2 className="size-16 text-[color:var(--hc-color-status-success-fg)]" aria-hidden />} label="Past visits" count={past.length} />
+          {ep?.postpartum?.antepartum && (
+            <div className="flex flex-wrap items-center gap-12 rounded-[var(--hc-radius-12)] border border-[color:var(--hc-color-border-subtle)] bg-[color:var(--hc-color-bg-subtle)] px-16 py-12">
+              <span className="text-14 font-medium text-[color:var(--hc-color-text-primary)]">Final antepartum risk</span>
+              <span className="text-16 font-semibold tabular-nums text-[color:var(--hc-color-text-primary)]">
+                {ep.postpartum.antepartum.score}<span className="text-12 font-normal text-[color:var(--hc-color-text-supporting)]"> / {ep.postpartum.antepartum.max}</span>
+              </span>
+              <MhrBadge cat={ep.postpartum.antepartum.cat} />
+              <span className="text-12 text-[color:var(--hc-color-text-supporting)]">
+                Maternal health risk score carried forward at the end of pregnancy · {ep.postpartum.outcome}, {formatDate(ep.postpartum.day0)}
+              </span>
+            </div>
+          )}
           {past.length === 0 ? <EmptyRow>No past visits</EmptyRow> : (
             <div className="flex flex-col gap-8">{past.map(v => <VisitRow key={v.id} v={v} ep={ep} onOpen={setSelected} />)}</div>
           )}

@@ -1,24 +1,29 @@
-import { ClipboardList, LogOut } from "lucide-react";
+import { ClipboardList, LogOut, RotateCcw } from "lucide-react";
 import { AppShell, Sidebar } from "@hc1com/design-system";
 
 /* Sign out in the prototype reloads the app, which resets the demo data. */
 const USER = {
   name: "Clinical IQ User",
   role: "HerCare Co-Pilot",
-  menu: [{ label: "Sign out", icon: <LogOut />, destructive: true, onSelect: () => window.location.reload() }],
+  menu: [
+    /* DEMO ONLY: reloading replays the mock Epic records a few seconds after the page opens. */
+    { label: "Replay Epic events (demo)", icon: <RotateCcw />, onSelect: () => window.location.reload() },
+    { label: "Sign out", icon: <LogOut />, destructive: true, separatorBefore: true, onSelect: () => window.location.reload() },
+  ],
 };
 
 /**
  * ClinicalIQ app frame for HerCare: the hc1 top bar and sidebar, the same as Anemia, SourceIQ and PBM.
  * `screen` is the current screen; `onNavigate(screen)` switches it.
  */
-export function ClinicalShell({ screen, onNavigate, onOpenAssistant, children }) {
+export function ClinicalShell({ screen, onNavigate, onOpenAssistant, notifications, children }) {
   return (
     <AppShell>
       <AppShell.TopBar
         product={{ name: "ClinicalIQ" }}
         context="HerCare Co-Pilot"
         assistant={onOpenAssistant ? { onClick: onOpenAssistant } : undefined}
+        notifications={notifications}
         user={USER}
       />
       <Sidebar ariaLabel="ClinicalIQ navigation" persistKey="hc1-clinicaliq-hercare-sidebar">

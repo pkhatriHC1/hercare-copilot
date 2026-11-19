@@ -4,6 +4,7 @@ import { Badge, Button, PageHeader, Tabs } from "@hc1com/design-system";
 import { PageTemplate } from "@hc1com/design-system/patterns";
 import { dueDateLabel, formatDate, gestationalAge, nextVisit, visitsForEpisode } from "../mock/episodes";
 import { VisitsZone } from "../visits/VisitsZone";
+import { POSTPARTUM_WINDOW_DAYS, daysPostpartum } from "../lib/postpartum";
 import { CarePlan } from "./CarePlan";
 import { OverviewZone } from "./OverviewZone";
 
@@ -40,7 +41,9 @@ export function PatientWorkspace({ patient: p, episode, defaultZone = "overview"
         title={
           <span className="inline-flex flex-wrap items-center gap-12">
             {p.name}
-            {episode?.status === "postpartum" && <Badge variant="info" appearance="soft" size="sm">Postpartum</Badge>}
+            {episode?.status === "postpartum" && <Badge variant="info" appearance="soft" size="sm">Postpartum · day {daysPostpartum(episode) ?? "—"} of {POSTPARTUM_WINDOW_DAYS}</Badge>}
+            {episode?.postpartum && <Badge variant="neutral" appearance="soft" size="sm">{episode.postpartum.outcome}{episode.postpartum.deliveryType ? ` · ${episode.postpartum.deliveryType}` : ""}</Badge>}
+            {episode?.postpartum?.readmission && <Badge variant="danger" appearance="solid" size="sm">Readmitted {formatDate(episode.postpartum.readmission.date)}</Badge>}
           </span>
         }
         subtitle={

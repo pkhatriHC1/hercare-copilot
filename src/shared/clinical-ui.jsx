@@ -78,7 +78,7 @@ export function careStatus(p) {
 }
 
 /** Compact readings list: label on the left, value and unit on the right, one per line. */
-export function Readings({ items }) {
+export function Readings({ items, missingLabel = "Missing" }) {
   return (
     <dl className="grid grid-cols-[auto_1fr] items-baseline gap-x-12 gap-y-4">
       {items.map(({ label, value, unit, tone, missing }) => (
@@ -87,7 +87,7 @@ export function Readings({ items }) {
           <dd className="flex items-baseline gap-4">
             {missing ? (
               <span className="flex items-center gap-4 text-14 text-[color:var(--hc-color-text-tertiary)]">
-                <FlaskConicalOff className="size-12" aria-hidden /> Missing
+                <FlaskConicalOff className="size-12" aria-hidden /> {missingLabel}
               </span>
             ) : (
               <>
