@@ -37,7 +37,7 @@ export function ClinicalShell({ screen, onNavigate, onOpenAssistant, notificatio
           />
         </Sidebar.Section>
       </Sidebar>
-      <AppShell.Main>{children}</AppShell.Main>
+      <AppShell.Main maxWidth={null} className="w-full">{children}</AppShell.Main>
     </AppShell>
   );
 }
